@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -38,6 +39,17 @@ public class MainActivity extends Activity {
                 if (status == TextToSpeech.SUCCESS) {
                     textToSpeech.setLanguage(Locale.US);
                     textToSpeech.setSpeechRate(0.90f);
+                    textToSpeech.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                        @Override public void onStart(String utteranceId) { }
+
+                        @Override public void onDone(String utteranceId) {
+                            notifySpeechFinished();
+                        }
+
+                        @Override public void onError(String utteranceId) {
+                            notifySpeechFinished();
+                        }
+                    });
                 }
             }
         });
@@ -71,12 +83,26 @@ public class MainActivity extends Activity {
         @JavascriptInterface public void stop() {
             runOnUiThread(new Runnable() {
                 @Override public void run() {
-                    if (textToSpeech != null) {
-                        textToSpeech.stop();
-                    }
+                    if (textToSpeech != null) textToSpeech.stop();
+                    notifySpeechFinished();
                 }
             });
         }
+
+        @JavascriptInterface public boolean isSpeaking() {
+            return textToSpeech != null && textToSpeech.isSpeaking();
+        }
+    }
+
+    private void notifySpeechFinished() {
+        if (webView == null) return;
+        runOnUiThread(new Runnable() {
+            @Override public void run() {
+                if (webView != null) {
+                    webView.evaluateJavascript("if(window.onNativeSpeechFinished){window.onNativeSpeechFinished();}", null);
+                }
+            }
+        });
     }
 
     @Override public void onBackPressed() {
