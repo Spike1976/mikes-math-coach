@@ -12,7 +12,8 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;\nimport android.widget.Toast;
+import android.webkit.WebViewClient;
+import android.widget.Toast;
 import java.util.Locale;
 
 public class MainActivity extends Activity {
@@ -21,9 +22,12 @@ public class MainActivity extends Activity {
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override protected void onCreate(Bundle state) {
-        super.onCreate(state);\n        Toast.makeText(this, "Mike Math Coach starting…", Toast.LENGTH_SHORT).show();
+        super.onCreate(state);
+        Toast.makeText(this, "Mike Math Coach starting…", Toast.LENGTH_SHORT).show();
+
         getWindow().setStatusBarColor(Color.rgb(7,17,31));
         getWindow().setNavigationBarColor(Color.rgb(7,17,31));
+
         webView = new WebView(this);
         setContentView(webView);
 
@@ -34,6 +38,7 @@ public class MainActivity extends Activity {
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         settings.setMediaPlaybackRequiresUserGesture(false);
+
         textToSpeech = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
             @Override public void onInit(int status) {
                 if (status == TextToSpeech.SUCCESS) {
@@ -53,6 +58,7 @@ public class MainActivity extends Activity {
                 }
             }
         });
+
         webView.addJavascriptInterface(new SpeechBridge(), "AndroidSpeech");
 
         webView.setWebViewClient(new WebViewClient() {
@@ -70,8 +76,8 @@ public class MainActivity extends Activity {
                 return true;
             }
         });
-        webView.loadUrl("file:///android_asset/index.html");
 
+        webView.loadUrl("file:///android_asset/index.html");
     }
 
     private class SpeechBridge {
@@ -104,7 +110,10 @@ public class MainActivity extends Activity {
         runOnUiThread(new Runnable() {
             @Override public void run() {
                 if (webView != null) {
-                    webView.evaluateJavascript("if(window.onNativeSpeechFinished){window.onNativeSpeechFinished();}", null);
+                    webView.evaluateJavascript(
+                        "if(window.onNativeSpeechFinished){window.onNativeSpeechFinished();}",
+                        null
+                    );
                 }
             }
         });
