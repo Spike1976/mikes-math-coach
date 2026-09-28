@@ -12,7 +12,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
+import android.webkit.WebViewClient;\nimport android.widget.Toast;
 import java.util.Locale;
 
 public class MainActivity extends Activity {
@@ -21,7 +21,7 @@ public class MainActivity extends Activity {
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override protected void onCreate(Bundle state) {
-        super.onCreate(state);
+        super.onCreate(state);\n        Toast.makeText(this, "Mike Math Coach starting…", Toast.LENGTH_SHORT).show();
         getWindow().setStatusBarColor(Color.rgb(7,17,31));
         getWindow().setNavigationBarColor(Color.rgb(7,17,31));
         webView = new WebView(this);
@@ -56,6 +56,11 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(new SpeechBridge(), "AndroidSpeech");
 
         webView.setWebViewClient(new WebViewClient() {
+            @Override public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                Toast.makeText(MainActivity.this, "Math Coach loaded", Toast.LENGTH_SHORT).show();
+            }
+
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 if ("file".equals(uri.getScheme())) return false;
