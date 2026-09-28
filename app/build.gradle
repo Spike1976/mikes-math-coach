@@ -19,6 +19,7 @@ android {
             if (stableTestKeystore.exists()) {
                 storeFile stableTestKeystore
                 storePassword 'mikesmathdebug'
+                storeType 'PKCS12'
                 keyAlias 'mikesmathdebug'
                 keyPassword 'mikesmathdebug'
             }
