@@ -29,6 +29,9 @@ jobs:
       - name: Install Android 35 SDK
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
+      - name: Restore stable test signing key
+        run: base64 --decode ci/mikes-math-test.keystore.b64 > ci/mikes-math-test.keystore
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -37,9 +40,12 @@ jobs:
       - name: Build debug APK
         run: gradle --no-daemon clean assembleDebug
 
+      - name: Verify APK exists
+        run: ls -lh app/build/outputs/apk/debug/app-debug.apk
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Mike-Math-Coach-v1.6-debug
+          name: Mike-Math-Coach-v1.6.3-test
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
