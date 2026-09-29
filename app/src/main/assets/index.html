@@ -166,6 +166,18 @@ function paintFormula(formula,tag){
  else if(tag==="Fractions") painted=formula.replace(/(\d+\/\d+\s*\+\s*\d+\/\d+)/,"<span class='focus'>$1</span>");
  return painted===formula?"<span class='focus'>"+formula+"</span>":painted;
 }
+function safeQuestionFormula(l){
+ const tag=String(l.tag||"").replace(/^REVIEW · /,"");
+ if(tag==="Place value"){
+   const m=String(l.q||"").match(/\b(\d+)\b/);
+   return m?m[1]:l.formula;
+ }
+ if(tag==="Patterns"){
+   const m=String(l.q||"").match(/:\s*([^?]+)\?/);
+   return m?m[1].trim():l.formula;
+ }
+ return l.formula;
+}
 const courseExamples={
  squaresdeep:"Examples: 2² = 2 × 2 = 4 · 5² = 5 × 5 = 25 · 10² = 10 × 10 = 100",
  order:"Examples: 2 + 3 × 4 → multiply first · (2 + 3) × 4 → parentheses first",
@@ -187,26 +199,26 @@ const courseExamples={
  workout:"Use the meaning shown here, solve one operation at a time, and never guess what a symbol means."
 };
 const basicConcepts={
- "Place value":"Digits have different jobs depending on position. In 483, the 4 is hundreds, the 8 is tens, and the 3 is ones.",
+ "Place value":"In a whole number, each digit has a place. Reading from the right, the places are ones, tens, hundreds, thousands, and so on.",
  "Compare numbers":"Compare numbers from left to right. The first place where the digits differ tells which number is larger.",
  "Even & odd":"Even numbers divide by 2 with no remainder. Odd numbers leave a remainder of 1.",
  "Rounding":"To round to the nearest ten, look at the ones digit. 0–4 rounds down; 5–9 rounds up.",
  "Estimation":"Estimation uses nearby easy numbers. Round first, then calculate with the rounded values.",
  "Addition":"Line up place values. Add ones with ones, tens with tens, and regroup when a place reaches 10.",
  "Subtraction":"Line up place values. Subtract ones from ones and tens from tens, borrowing when needed.",
- "Multiplication facts":"Multiplication means equal groups. For example, 4 × 3 means four groups of three.",
+ "Multiplication facts":"Multiplication means combining equal-size groups. One number tells how many groups; the other tells how many are in each group.",
  "Division facts":"Division splits a total into equal groups or asks how many equal groups fit.",
- "Fact families":"Multiplication and division undo each other. If 4 × 6 = 24, then 24 ÷ 4 = 6 and 24 ÷ 6 = 4.",
+ "Fact families":"Multiplication and division are inverse operations. A multiplication fact can be turned into related division facts.",
  "Money":"Money problems use ordinary decimal subtraction and addition. Keep dollars and cents aligned by the decimal point.",
  "Time":"Time can be added in minutes. Every 60 minutes becomes 1 more hour.",
- "Measurement conversion":"Use the conversion rule as a multiplier. For example, 1 foot = 12 inches.",
+ "Measurement conversion":"To convert units, use the known relationship between the units and multiply or divide by the conversion factor.",
  "Fraction meaning":"The denominator names the size of the equal pieces. The numerator counts how many pieces you have.",
  "Adding fractions":"When denominators match, keep the denominator and add only the numerators.",
  "Decimals":"Line up decimal points so tenths stay under tenths and hundredths stay under hundredths.",
- "Percent basics":"Percent means per 100. For example, 25% means 25 out of every 100.",
+ "Percent basics":"Percent means per 100. Convert a percent to a fraction over 100 or a decimal before calculating.",
  "Ratios & proportions":"Equivalent ratios multiply or divide both parts by the same factor.",
  "Negative numbers":"Picture a number line. Adding moves right; subtracting moves left.",
- "Exponents basics":"An exponent tells how many copies of the base are multiplied. For example, 5² means 5 × 5.",
+ "Exponents basics":"An exponent tells how many copies of the base are multiplied together.",
  "Square roots basics":"A square root asks which positive number, multiplied by itself, makes the given value.",
  "Order of operations":"Use parentheses first, then exponents, then multiplication/division, then addition/subtraction.",
  "Patterns":"Look for the rule that repeats, such as adding the same amount each time."
@@ -441,10 +453,24 @@ function backStep(){if(diagnosticMode){home();return}if(step>0){step--;render()}
 function render(){
  const l=lessons[step],done=completedSteps.has(step);locked=done;questionStarted=Date.now();hintUsed=false;explainIndex=0;explanationStyles=[];bar.style.width=((step+1)/lessons.length*100)+'%';
  if(diagnosticMode){
-  screen.innerHTML=`<div class="eyebrow">Placement question ${step+1} of ${lessons.length} · ${l.tag}</div><div class="diagNote">No hints, lesson preview, or correctness feedback is shown during placement. Work from what you already know.</div><h1>${l.q}</h1><div class="formula">${paintFormula(l.formula,l.tag)}</div><div class="answers">${l.a.map((x,i)=>`<button class="choice" onclick="diagnosticPick(${i})"><b>${String.fromCharCode(65+i)}</b><span>${x}</span></button>`).join('')}</div>${audioEnabled?`<div class="mini"><button id="questionSpeakBtn" onclick="speakQuestionOnly()">🔊 Read question only</button></div>`:''}`;return;
+  screen.innerHTML=`<div class="eyebrow">Placement question ${step+1} of ${lessons.length} · ${l.tag}</div><div class="diagNote">No hints, lesson preview, or correctness feedback is shown during placement. Work from what you already know.</div><h1>${l.q}</h1><div class="formula">${paintFormula(safeQuestionFormula(l),l.tag)}</div><div class="answers">${l.a.map((x,i)=>`<button class="choice" onclick="diagnosticPick(${i})"><b>${String.fromCharCode(65+i)}</b><span>${x}</span></button>`).join('')}</div>${audioEnabled?`<div class="mini"><button id="questionSpeakBtn" onclick="speakQuestionOnly()">🔊 Read question only</button></div>`:''}`;return;
  }
  const pref=preferredExplanation(l),teachText=pref?pref[1]:lessonTeaching(l),teachTitle=pref?pref[0]:'Learn this first';
- screen.innerHTML=`<div class="eyebrow">Step ${step+1} of ${lessons.length} · ${l.tag}</div><div class="teach"><h2>${teachTitle}</h2><p>${teachText}</p><div class="examples"><strong>Different example:</strong> ${exampleText(l)}</div></div><div class="questionLabel">Now prove you understand it</div><h1>${l.q}</h1><div class="formula">${paintFormula(l.formula,l.tag)}</div><div class="answers">${l.a.map((x,i)=>`<button class="choice ${done&&i===l.ok?'correct':''}" onclick="pick(${i},this)" ${done?'disabled':''}><b>${String.fromCharCode(65+i)}</b><span>${x}</span></button>`).join('')}</div><div id="coach">${done?`<div class="coach"><strong>Saved as correct.</strong> ${l.why}</div><button class="next" onclick="advance()">Next tiny step</button>`:''}</div>${done?'':`<button class="next quiet" id="answerRevealBtn" onclick="revealCurrentAnswer()">👁 Open answer / explanation</button><div id="answerReveal"></div>`}<div class="mini">${audioEnabled?`<button id="speakBtn" onclick="speak()">🔊 Read whole lesson</button>`:''}<button onclick="explainAnotherWay()">💡 Explain it another way</button></div>`;
+ screen.innerHTML=`<div class="eyebrow">Step ${step+1} of ${lessons.length} · ${l.tag}</div><div class="teach"><h2>${teachTitle}</h2><p>${teachText}</p><button class="next quiet" style="margin-top:14px" id="exampleRevealBtn" onclick="toggleExample()">Show a different example</button><div id="exampleReveal"></div></div><div class="questionLabel">Now prove you understand it</div><h1>${l.q}</h1><div class="formula">${paintFormula(safeQuestionFormula(l),l.tag)}</div><div class="answers">${l.a.map((x,i)=>`<button class="choice ${done&&i===l.ok?'correct':''}" onclick="pick(${i},this)" ${done?'disabled':''}><b>${String.fromCharCode(65+i)}</b><span>${x}</span></button>`).join('')}</div><div id="coach">${done?`<div class="coach"><strong>Saved as correct.</strong> ${l.why}</div><button class="next" onclick="advance()">Next tiny step</button>`:''}</div>${done?'':`<button class="next quiet" id="answerRevealBtn" onclick="revealCurrentAnswer()">👁 Open answer / explanation</button><div id="answerReveal"></div>`}<div class="mini">${audioEnabled?`<button id="speakBtn" onclick="speak()">🔊 Read concept</button>`:''}<button onclick="explainAnotherWay()">💡 Explain it another way</button></div>`;
+}
+function toggleExample(){
+ hintUsed=true;
+ const l=lessons[step];
+ const box=document.querySelector('#exampleReveal');
+ const btn=document.querySelector('#exampleRevealBtn');
+ if(!box||!btn)return;
+ if(box.innerHTML){
+   box.innerHTML="";
+   btn.textContent="Show a different example";
+ }else{
+   box.innerHTML=`<div class="examples" style="margin-top:12px"><strong>Different example:</strong> ${exampleText(l)}</div>`;
+   btn.textContent="Hide example";
+ }
 }
 function revealCurrentAnswer(){
  if(diagnosticMode||locked)return;
@@ -472,7 +498,7 @@ function pick(i,el){
 function hint(){hintUsed=true;const l=lessons[step],next=locked?'<button class="next" onclick="advance()">Next tiny step</button>':'';document.querySelector('#coach').innerHTML=`<div class="coach"><strong>Hint:</strong> ${focusHint(l)}</div>${next}`}
 function explainAnotherWay(){hintUsed=true;const l=lessons[step],next=locked?'<button class="next" onclick="advance()">Next tiny step</button>':'',styles=[["Plain-English breakdown",lessonTeaching(l)],["Worked example",workedExplain(l)],["Real-life picture",analogyFor(l)+"<br><br><strong>Different example:</strong> "+exampleText(l)],["Six-step checklist",checklistExplain(l)],["Pattern discovery",exampleText(l)+"<br><br>Compare what changes and what stays constant."],["Why it works",deepExplain(l)+"<br><br><strong>Reasoning:</strong> The rule preserves the mathematical relationship, not one memorized number."],["Mistake-based teaching",focusHint(l)+"<br><br>Identify the tempting wrong move before you calculate."],["Guided questions","What does the main symbol mean?<br>What operation comes first?<br>What stays unchanged?<br>Can you solve only that first step now?"]];const chosen=styles[explainIndex%styles.length];explainIndex++;explanationStyles.push(chosen[0]);document.querySelector('#coach').innerHTML=`<div class="coach"><strong>${chosen[0]} · way ${((explainIndex-1)%styles.length)+1} of ${styles.length}</strong><br><br>${chosen[1]}<br><br><em>Tap again for a genuinely different approach.</em></div>${next}`}
 function doSpeak(text,btn,defaultLabel){if(!audioEnabled)return;if(audioSpeaking||nativeSpeaking()||browserSpeaking()){stopAudio();return}try{if(window.AndroidSpeech&&typeof window.AndroidSpeech.speak==="function"){audioSpeaking=true;window.AndroidSpeech.speak(text);if(btn)btn.textContent="⏹ Stop audio";return}if("speechSynthesis" in window){const u=new SpeechSynthesisUtterance(text);u.onstart=()=>{audioSpeaking=true;if(btn)btn.textContent="⏹ Stop audio"};u.onend=()=>{audioSpeaking=false;if(btn)btn.textContent=defaultLabel||"🔊 Read whole lesson"};u.onerror=()=>{audioSpeaking=false;if(btn)btn.textContent=defaultLabel||"🔊 Read whole lesson"};speechSynthesis.speak(u);return}}catch(e){}audioSpeaking=false;if(btn)btn.textContent="Audio unavailable"}
-function speak(){if(!audioEnabled){stopAudio();return}if(audioSpeaking||nativeSpeaking()||browserSpeaking()){stopAudio();return}const l=lessons[step];const plain=s=>String(s).replace(/<[^>]*>/g,' ').replace(/&gt;/g,' greater than ').replace(/&nbsp;/g,' ');const text="Learn this first. "+plain(lessonTeaching(l))+". Different example. "+plain(exampleText(l))+". Now answer: "+plain(l.q)+". The choices are: "+l.a.map(plain).join(". or ");doSpeak(text,document.querySelector('#speakBtn'),"🔊 Read whole lesson")}
+function speak(){if(!audioEnabled){stopAudio();return}if(audioSpeaking||nativeSpeaking()||browserSpeaking()){stopAudio();return}const l=lessons[step];const plain=s=>String(s).replace(/<[^>]*>/g,' ').replace(/&gt;/g,' greater than ').replace(/&nbsp;/g,' ');const text="Learn this first. "+plain(lessonTeaching(l))+". Now answer: "+plain(l.q)+". The choices are: "+l.a.map(plain).join(". or ");doSpeak(text,document.querySelector('#speakBtn'),"🔊 Read concept")}
 function speakQuestionOnly(){if(!audioEnabled){stopAudio();return}if(audioSpeaking||nativeSpeaking()||browserSpeaking()){stopAudio();return}const l=lessons[step];const plain=s=>String(s).replace(/<[^>]*>/g,' ');doSpeak("Question. "+plain(l.q)+". Choices. "+l.a.map(plain).join('. or '),document.querySelector('#questionSpeakBtn'),"🔊 Read question only")}
 function advance(){if(step<lessons.length-1){step++;render()}else if(reviewQueue.length){lessons=lessons.concat(reviewQueue);reviewQueue=[];step++;render()}else finish()}
 function finish(){mastered++;localStorage.mathMastered=mastered;if(guidedMode){let i=+(localStorage.guidedIndex||0);localStorage.guidedIndex=Math.min(i+1,guidedOrder.length)}streak.textContent='🔥 '+mastered+' mastered';bar.style.width='100%';const nextGuided=guidedMode&&+(localStorage.guidedIndex||0)<guidedOrder.length?`<button class="next" onclick="startGuided()">Continue to the next guided lesson</button>`:"";screen.innerHTML=`<div class="home"><div class="icon">🏁</div><div class="eyebrow">Lesson mastered</div><h1>You proved that you understand it.</h1><p class="prompt">Anything missed came back for another correct answer before this lesson counted as mastered.</p><div class="scoregrid"><div><b>${lessons.length}</b><small>steps</small></div><div><b>${mistakes}</b><small>learning turns</small></div><div><b>${mastered}</b><small>mastered</small></div></div>${nextGuided}<button class="next quiet" onclick="start(currentCourse,guidedMode)">Practice it again</button><button class="next quiet" onclick="home()">Return to main screen</button></div>`}
