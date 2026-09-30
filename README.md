@@ -78,10 +78,10 @@ Every push to `main` builds a clean Android debug APK using Java 17, Android SDK
 The current test build uses:
 
 - Application ID: `com.mikesmathcoach.test`
-- Version: **1.6.3-test**
+- Version: **1.6.5-test**
 - Version code: **9**
 - Fixed JKS test signing key for repeatable updates
-- Artifact name: `Mike-Math-Coach-v1.6.3-test`
+- Artifact name: `Mike-Math-Coach-v1.6.5-test`
 
 Local build command:
 
@@ -109,9 +109,19 @@ The app is designed around local, on-device learning data whenever practical. Fu
 
 Active development.
 
-Current Android test version: **1.6.3-test** (`versionCode 9`).
+Current Android test version: **1.6.5-test** (`versionCode 11`).
 
-Latest main-branch feature set includes the selectable Basic Math Worksheet, expanded basic-math placement coverage, generated practice, and the corrected audio-stop architecture.
+Latest main-branch feature set includes the selectable Basic Math Worksheet, expanded basic-math placement coverage, generated practice, corrected audio-stop behavior, and a progressive-help lesson system that keeps answers hidden by default.
+
+### Progressive help
+
+Lesson screens now use three help levels:
+
+1. **Concept first** — the rule is explained without solving the current problem.
+2. **Show a different example** — optional extra help using different numbers.
+3. **Open answer / explanation** — optional reveal of the current answer and full reasoning.
+
+Current-question formula boxes are designed to avoid leaking the answer before the learner chooses one. For example, a place-value question shows the number itself rather than labeling its hundreds, tens, and ones positions in advance.
 
 ## Copyright
 
