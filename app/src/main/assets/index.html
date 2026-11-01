@@ -579,7 +579,7 @@ function foundationProblem(skill,level=1){
  if(mode===3)return {skill:"arithmetic",level,prompt:"What is "+(a*b)+" ÷ "+b+"?",answer:a,hint:"Division undoes multiplication."};
  return {skill:"arithmetic",level,prompt:"What is "+a+" + "+b+"?",answer:a+b,hint:"Start with the larger number and count forward."};
 }
-function readFoundationHistory(){try{const x=JSON.parse(localStorage.foundationAttempts||"[]");return Array.isArray(x)?x:[]}catch(e){return []}}
+function readFoundationHistory(){try{const x=JSON.parse(localStorage.foundationAttempts||"[]");return Array.isArray(x)?x.filter(r=>r&&foundationSkills.includes(r.skill)&&typeof r.correct==="boolean"&&Number.isFinite(Number(r.level||1))):[]}catch(e){return []}}
 function weakestFoundationSkill(rows=readFoundationHistory()){
  const stats=foundationSkills.map(skill=>{const a=rows.filter(x=>x.skill===skill);return {skill,attempts:a.length,errors:a.filter(x=>!x.correct).length}});
  stats.sort((a,b)=>(b.attempts?b.errors/b.attempts:0)-(a.attempts?a.errors/a.attempts:0)||a.attempts-b.attempts);
@@ -619,7 +619,7 @@ function checkFoundationAnswer(){
  const history=readFoundationHistory();
  // Each problem counts once toward adaptive level decisions, even after several guesses.
  if(!foundationSession.recorded){history.push({at:new Date().toISOString(),skill:q.skill,correct,level:q.level});foundationSession.recorded=true;}
- localStorage.foundationAttempts=JSON.stringify(history.slice(-300));
+ try{localStorage.foundationAttempts=JSON.stringify(history.slice(-300))}catch(e){feedback.textContent="Storage is unavailable; your practice may not be saved."}
  if(correct){foundationSession.completed=true;feedback.textContent="Correct. You can try another problem.";input.disabled=true}
  else{foundationSession.mistakes++;feedback.textContent="Not quite. "+q.hint}
 }
