@@ -307,3 +307,20 @@ test('v2 release targets the current Google Play API level',()=>{
  assert.match(releaseWorkflow,/android-36/);
  assert.match(releaseWorkflow,/bundleRelease/);
 });
+
+test('v2 build tools support API 36',()=>{
+ const build=fs.readFileSync('build.gradle','utf8');
+ const gradle=fs.readFileSync('app/build.gradle','utf8');
+ for(const path of ['.github/workflows/android-build.yml','.github/workflows/android-release.yml']){
+  const workflow=fs.readFileSync(path,'utf8');
+  assert.match(workflow,/gradle-version: '8\.11\.1'/);
+ }
+ assert.match(build,/version '8\.9\.2'/);
+ assert.match(gradle,/versionName '2\.0\.0'/);
+ assert.match(gradle,/targetSdk 36/);
+});
+test('privacy policy accompanies offline production configuration',()=>{
+ const policy=fs.readFileSync('PRIVACY_POLICY.md','utf8');
+ assert.match(policy,/offline mathematics tutoring/);
+ assert.match(policy,/stored locally/);
+});
