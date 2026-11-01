@@ -27,7 +27,7 @@ jobs:
           packages: platform-tools
 
       - name: Install Android 35 SDK
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       - name: Restore stable test signing key
         run: base64 --decode ci/mikes-math-test.keystore.b64 > ci/mikes-math-test.keystore
@@ -54,6 +54,6 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Mike-Math-Coach-v1.22.0-rc2
+          name: Mike-Math-Coach-v2.0.0
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
