@@ -39,8 +39,8 @@ test('layout supports screen readers and reduced motion preferences', () => {
 
 test('Settings reports installed Android version and build', () => {
   const gradle = fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle, /versionName '1\.17\.0-test'/);
-  assert.match(gradle, /versionCode 24/);
+  assert.match(gradle, /versionName '1\.18\.0-test'/);
+  assert.match(gradle, /versionCode 25/);
   assert.match(java, /@JavascriptInterface public String getAppVersion\(\)/);
   assert.match(html, /function installedVersion\(\)/);
   assert.match(html, /App version/);
@@ -220,4 +220,35 @@ test('malformed foundation history is ignored rather than crashing',()=>{
  assert.match(html,/function readFoundationHistory\(\)/);
  assert.match(html,/foundationSkills\.includes\(r\.skill\)/);
  assert.match(html,/Storage is unavailable/);
+});
+
+test('fraction and decimal answers match independently parsed expressions',()=>{
+ const match=html.match(/function foundationProblem[^]*?\n\}/);
+ assert.ok(match);
+ const generate=new Function(match[0]+';return foundationProblem')();
+ for(let level=1;level<=3;level++){
+  for(let n=0;n<100;n++){
+   const fraction=generate('fractions',level);
+   const parts=fraction.prompt.match(/[0-9]+/g).map(Number);
+   const expected=level===1?parts[0]/parts[1]:parts[0]/parts[1]+parts[2]/parts[3];
+   assert.ok(Math.abs(fraction.answer-expected)<1e-10,fraction.prompt);
+   const decimal=generate('decimals',level);
+   const values=decimal.prompt.match(/[0-9]+[.][0-9]+/g).map(Number);
+   const calc=decimal.prompt.includes('Subtract')?values[0]-values[1]:values[0]+values[1];
+   assert.ok(Math.abs(decimal.answer-calc)<1e-9,decimal.prompt);
+  }
+ }
+});
+test('local practice data is safely readable after repeated app initialization',()=>{
+ const match=html.match(/function readFoundationHistory\(\)\{[^\n]+\}/);
+ assert.ok(match);
+ const makeRead=new Function('const foundationSkills=["arithmetic","fractions","decimals","percentages"];return '+match[0])();
+ const previous=global.localStorage;
+ try{
+  global.localStorage={foundationAttempts:JSON.stringify([{skill:'decimals',correct:true,level:2}])};
+  assert.equal(makeRead().length,1);
+  assert.equal(makeRead().length,1);
+  global.localStorage.foundationAttempts='{bad';
+  assert.deepEqual(makeRead(),[]);
+ }finally{global.localStorage=previous}
 });
