@@ -19,6 +19,9 @@ import java.util.Locale;
 public class MainActivity extends Activity {
     private WebView webView;
     private TextToSpeech textToSpeech;
+    private volatile String activeUtteranceId = null;
+    private long speechSequence = 0;
+    private boolean speechReady = false;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override protected void onCreate(Bundle state) {
@@ -42,17 +45,17 @@ public class MainActivity extends Activity {
         textToSpeech = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
             @Override public void onInit(int status) {
                 if (status == TextToSpeech.SUCCESS) {
-                    textToSpeech.setLanguage(Locale.US);
+                    speechReady = textToSpeech.setLanguage(Locale.US) != TextToSpeech.LANG_MISSING_DATA;
                     textToSpeech.setSpeechRate(0.90f);
                     textToSpeech.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                         @Override public void onStart(String utteranceId) { }
 
                         @Override public void onDone(String utteranceId) {
-                            notifySpeechFinished();
+                            notifySpeechFinished(utteranceId);
                         }
 
                         @Override public void onError(String utteranceId) {
-                            notifySpeechFinished();
+                            notifySpeechFinished(utteranceId);
                         }
                     });
                 }
@@ -84,8 +87,13 @@ public class MainActivity extends Activity {
         @JavascriptInterface public void speak(final String text) {
             runOnUiThread(new Runnable() {
                 @Override public void run() {
-                    if (textToSpeech != null) {
-                        textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, "math-question");
+                    if (textToSpeech != null && speechReady) {
+                        String id = "math-" + (++speechSequence);
+                        activeUtteranceId = id;
+                        int result = textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, id);
+                        if (result == TextToSpeech.ERROR) notifySpeechFinished(id);
+                    } else {
+                        notifySpeechFinished(null);
                     }
                 }
             });
@@ -94,8 +102,9 @@ public class MainActivity extends Activity {
         @JavascriptInterface public void stop() {
             runOnUiThread(new Runnable() {
                 @Override public void run() {
+                    activeUtteranceId = null;
                     if (textToSpeech != null) textToSpeech.stop();
-                    notifySpeechFinished();
+                    notifySpeechFinished(null);
                 }
             });
         }
@@ -105,11 +114,12 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void notifySpeechFinished() {
+    private void notifySpeechFinished(final String utteranceId) {
         if (webView == null) return;
         runOnUiThread(new Runnable() {
             @Override public void run() {
-                if (webView != null) {
+                if (webView != null && (utteranceId == null || utteranceId.equals(activeUtteranceId))) {
+                    activeUtteranceId = null;
                     webView.evaluateJavascript(
                         "if(window.onNativeSpeechFinished){window.onNativeSpeechFinished();}",
                         null
@@ -125,6 +135,7 @@ public class MainActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
+        activeUtteranceId = null;
         if (textToSpeech != null) {
             textToSpeech.stop();
             textToSpeech.shutdown();
