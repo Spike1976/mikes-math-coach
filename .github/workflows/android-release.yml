@@ -1,0 +1,51 @@
+name: Signed Android release bundle
+on:
+  workflow_dispatch:
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run regression tests
+        run: node --test tests/*.test.cjs
+      - name: Prepare protected upload key
+        env:
+          UPLOAD_KEYSTORE_B64: ${{ secrets.UPLOAD_KEYSTORE_B64 }}
+          UPLOAD_STORE_PASSWORD: ${{ secrets.UPLOAD_STORE_PASSWORD }}
+          UPLOAD_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
+        run: |
+          test -n "$UPLOAD_KEYSTORE_B64"
+          test -n "$UPLOAD_STORE_PASSWORD"
+          test -n "$UPLOAD_KEY_ALIAS"
+          test -n "$UPLOAD_KEY_PASSWORD"
+          umask 077
+          printf '%s' "$UPLOAD_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/upload.keystore"
+      - name: Build signed release bundle
+        env:
+          MATH_UPLOAD_KEYSTORE: ${{ runner.temp }}/upload.keystore
+          MATH_UPLOAD_STORE_PASSWORD: ${{ secrets.UPLOAD_STORE_PASSWORD }}
+          MATH_UPLOAD_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
+          MATH_UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
+        run: gradle --no-daemon bundleRelease
+      - name: Upload release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mike-Math-Coach-signed-aab
+          path: app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
