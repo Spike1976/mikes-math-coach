@@ -43,6 +43,10 @@ jobs:
           MATH_UPLOAD_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
           MATH_UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
         run: gradle --no-daemon bundleRelease
+      - name: Verify signed release bundle
+        run: |
+          test -s app/build/outputs/bundle/release/app-release.aab
+          jarsigner -verify -strict app/build/outputs/bundle/release/app-release.aab
       - name: Upload release bundle
         uses: actions/upload-artifact@v4
         with:
