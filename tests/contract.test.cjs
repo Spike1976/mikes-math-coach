@@ -39,8 +39,8 @@ test('layout supports screen readers and reduced motion preferences', () => {
 
 test('Settings reports installed Android version and build', () => {
   const gradle = fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle, /versionName '1\.7\.0-test'/);
-  assert.match(gradle, /versionCode 12/);
+  assert.match(gradle, /versionName '1\.7\.1-test'/);
+  assert.match(gradle, /versionCode 13/);
   assert.match(java, /@JavascriptInterface public String getAppVersion\(\)/);
   assert.match(html, /function installedVersion\(\)/);
   assert.match(html, /App version/);
