@@ -508,7 +508,7 @@ function finishDiagnostic(){
 }
 function home(){
  diagnosticMode=false;stopAudio();
- const groups=["FOUNDATIONS","COLLEGE MATH","CALCULUS","AI MATHEMATICS"],gi=+(localStorage.guidedIndex||0),nextName=lessonBanks[guidedOrder[Math.min(gi,guidedOrder.length-1)]].name;bar.style.width='0%';screen.innerHTML=`<div class="home"><div class="icon">🧠</div><div class="eyebrow">Your directed learning path</div><h1>Understand it. Prove it. Remember it.</h1><div class="pathbox"><strong>Next guided lesson: ${nextName}</strong><br><span style="color:var(--muted)">Course ${Math.min(gi+1,guidedOrder.length)} of ${guidedOrder.length}. Missed ideas return later until you answer them correctly again.</span></div><button class="next" onclick="startGuided()">Continue my guided path</button><button class="next quiet" onclick="startStepLab()">✏️ Step-by-step equation lab</button><button class="next quiet" onclick="showLabHistory()">📈 Equation Lab learning history</button><button class="next quiet" onclick="startDueReview()">🔁 Review skills due today (${dueReviewCourses().length} subjects) · ${masterySummary().mastered} verified skills</button><button class="next quiet" onclick="showProfile()">📊 My strengths, weaknesses & learning path</button><button class="next quiet" onclick="startDiagnostic()">Find my real starting point</button><div class="level">MIXED WORKOUTS</div><div class="answers"><button class="choice" onclick="startWorkout(10)"><b>10</b><span><strong>Quick workout</strong><br><small style="color:var(--muted)">Ten fresh problems across the whole path.</small></span></button><button class="choice" onclick="startWorkout(25)"><b>25</b><span><strong>Full workout</strong><br><small style="color:var(--muted)">A serious mixed review with new numbers.</small></span></button><button class="choice" onclick="startWorkout(50)"><b>50</b><span><strong>Iron-brain challenge</strong><br><small style="color:var(--muted)">Fifty problems from foundations through AI math.</small></span></button></div>${groups.map(g=>`<div class="level">${g}</div><div class="answers">${Object.entries(lessonBanks).filter(([k,v])=>v.level===g).map(([k,v])=>`<button class="choice" onclick="${k==='basicmath'?'startBasicWorkout(30)':`start('${k}')`}"><b>→</b><span><strong>${v.name}</strong><br><small style="color:var(--muted)">${v.desc}</small></span></button>`).join('')}</div>`).join('')}<ul><li>Every symbol is taught before it is used</li><li>Examples use many different numbers</li><li>Missed ideas return before mastery</li></ul><button class="supportLink" onclick="showSupport()">♡ Voluntarily support this free tutor</button></div>`;
+ const groups=["FOUNDATIONS","COLLEGE MATH","CALCULUS","AI MATHEMATICS"],gi=+(localStorage.guidedIndex||0),nextName=lessonBanks[guidedOrder[Math.min(gi,guidedOrder.length-1)]].name;bar.style.width='0%';screen.innerHTML=`<div class="home"><div class="icon">🧠</div><div class="eyebrow">Your directed learning path</div><h1>Understand it. Prove it. Remember it.</h1><div class="pathbox"><strong>Next guided lesson: ${nextName}</strong><br><span style="color:var(--muted)">Course ${Math.min(gi+1,guidedOrder.length)} of ${guidedOrder.length}. Missed ideas return later until you answer them correctly again.</span></div><button class="next" onclick="startGuided()">Continue my guided path</button><button class="next quiet" onclick="startStepLab()">✏️ Step-by-step equation lab</button><button class="next quiet" onclick="startFoundationPractice()">🧮 Practice my weakest foundation skill</button><button class="next quiet" onclick="showLabHistory()">📈 Equation Lab learning history</button><button class="next quiet" onclick="startDueReview()">🔁 Review skills due today (${dueReviewCourses().length} subjects) · ${masterySummary().mastered} verified skills</button><button class="next quiet" onclick="showProfile()">📊 My strengths, weaknesses & learning path</button><button class="next quiet" onclick="startDiagnostic()">Find my real starting point</button><div class="level">MIXED WORKOUTS</div><div class="answers"><button class="choice" onclick="startWorkout(10)"><b>10</b><span><strong>Quick workout</strong><br><small style="color:var(--muted)">Ten fresh problems across the whole path.</small></span></button><button class="choice" onclick="startWorkout(25)"><b>25</b><span><strong>Full workout</strong><br><small style="color:var(--muted)">A serious mixed review with new numbers.</small></span></button><button class="choice" onclick="startWorkout(50)"><b>50</b><span><strong>Iron-brain challenge</strong><br><small style="color:var(--muted)">Fifty problems from foundations through AI math.</small></span></button></div>${groups.map(g=>`<div class="level">${g}</div><div class="answers">${Object.entries(lessonBanks).filter(([k,v])=>v.level===g).map(([k,v])=>`<button class="choice" onclick="${k==='basicmath'?'startBasicWorkout(30)':`start('${k}')`}"><b>→</b><span><strong>${v.name}</strong><br><small style="color:var(--muted)">${v.desc}</small></span></button>`).join('')}</div>`).join('')}<ul><li>Every symbol is taught before it is used</li><li>Examples use many different numbers</li><li>Missed ideas return before mastery</li></ul><button class="supportLink" onclick="showSupport()">♡ Voluntarily support this free tutor</button></div>`;
 }
 function showSupport(){bar.style.width='0%';screen.innerHTML=`<div class="home"><div class="eyebrow">Keep the tutor growing</div><h1>Support Mike’s Math Coach</h1><p class="prompt">The tutor is free. If it helps you, optional personal support helps pay for new lessons and improvements.</p><div class="qrCrop" style="display:flex;align-items:center;justify-content:center;min-height:120px"><strong style="font-size:1.4rem">$spikestokes</strong></div><a class="cashButton" href="https://cash.app/\$spikestokes" target="_blank" rel="noopener">Open Cash App · \$spikestokes</a><p style="color:var(--muted);font-size:.85rem;line-height:1.45">Support is voluntary. It does not purchase lessons, unlock features, or represent a tax-deductible charitable donation.</p><button class="next quiet" onclick="home()">Back to learning</button></div>`}
 function startGuided(){let i=+(localStorage.guidedIndex||0);if(i>=guidedOrder.length)i=0;guidedMode=true;start(guidedOrder[i],true)}
@@ -538,6 +538,47 @@ function saveLabProgress(record){
   items.push(record);
   localStorage.mathStepLabHistory=JSON.stringify(items.slice(-100));
  }catch(e){localStorage.mathStepLabHistory=JSON.stringify([record])}
+}
+
+/* Foundation practice uses generated problems and records attempts by skill. */
+let foundationSession=null;
+const foundationSkills=["arithmetic","fractions","decimals","percentages"];
+function foundationProblem(skill){
+ const r=(min,max)=>min+Math.floor(Math.random()*(max-min+1));
+ if(skill==="fractions"){const d=[2,4,5,10][r(0,3)],n=r(1,d-1);return {skill,prompt:"What is "+n+"/"+d+" as a decimal?",answer:n/d,hint:"Divide the numerator by the denominator."}}
+ if(skill==="decimals"){const a=r(10,90)/10,b=r(10,90)/10;return {skill,prompt:"Add "+a.toFixed(1)+" + "+b.toFixed(1),answer:Math.round((a+b)*10)/10,hint:"Align the decimal points before adding."}}
+ if(skill==="percentages"){const pct=[10,20,25,50][r(0,3)],base=r(2,15)*20;return {skill,prompt:"What is "+pct+"% of "+base+"?",answer:base*pct/100,hint:"Convert the percent to a fraction out of 100, then multiply."}}
+ const a=r(3,45),b=r(2,30);return {skill:"arithmetic",prompt:"What is "+a+" + "+b+"?",answer:a+b,hint:"Start with the larger number and count forward."};
+}
+function readFoundationHistory(){try{const x=JSON.parse(localStorage.foundationAttempts||"[]");return Array.isArray(x)?x:[]}catch(e){return []}}
+function weakestFoundationSkill(rows=readFoundationHistory()){
+ const stats=foundationSkills.map(skill=>{const a=rows.filter(x=>x.skill===skill);return {skill,attempts:a.length,errors:a.filter(x=>!x.correct).length}});
+ stats.sort((a,b)=>(b.attempts?b.errors/b.attempts:0)-(a.attempts?a.errors/a.attempts:0)||a.attempts-b.attempts);
+ return stats[0].skill;
+}
+function startFoundationPractice(skill="adaptive"){
+ stopAudio();diagnosticMode=false;
+ const chosen=skill==="adaptive"?weakestFoundationSkill():skill;
+ if(!foundationSkills.includes(chosen))return;
+ foundationSession={skill:chosen,question:foundationProblem(chosen),mistakes:0};renderFoundationPractice();
+}
+function renderFoundationPractice(){
+ if(!foundationSession)return;
+ const q=foundationSession.question;bar.style.width="0%";
+ screen.innerHTML='<div class="eyebrow">Ain’t Cloud Software · Foundation practice</div><h1>'+q.skill[0].toUpperCase()+q.skill.slice(1)+'</h1><div class="formula">'+q.prompt+'</div><div class="free-response"><label for="foundationAnswer">Your answer</label><div class="answer-entry"><input id="foundationAnswer" type="number" inputmode="decimal" step="any" placeholder="Enter number"><button onclick="checkFoundationAnswer()">Check</button></div><div id="foundationFeedback" role="status" aria-live="polite"></div></div><button class="next quiet" onclick="startFoundationPractice(\''+q.skill+'\')">New problem</button><button class="next quiet" onclick="home()">Back to home</button>';
+}
+function checkFoundationAnswer(){
+ if(!foundationSession)return;
+ const input=document.getElementById("foundationAnswer"),feedback=document.getElementById("foundationFeedback");
+ if(!input||!feedback)return;
+ const raw=input.value.trim(),value=Number(raw),q=foundationSession.question;
+ if(!raw||!Number.isFinite(value)){feedback.textContent="Enter a valid number.";return}
+ const correct=Math.abs(value-q.answer)<1e-8;
+ const history=readFoundationHistory();
+ history.push({at:new Date().toISOString(),skill:q.skill,correct});
+ localStorage.foundationAttempts=JSON.stringify(history.slice(-300));
+ if(correct){feedback.textContent="Correct. You can try another problem.";input.disabled=true}
+ else{foundationSession.mistakes++;feedback.textContent="Not quite. "+q.hint}
 }
 function labHistory(){
  try{const data=JSON.parse(localStorage.mathStepLabHistory||"[]");return Array.isArray(data)?data.filter(x=>x&&Array.isArray(x.stepErrors)):[]}catch(e){return []}
