@@ -39,8 +39,8 @@ test('layout supports screen readers and reduced motion preferences', () => {
 
 test('Settings reports installed Android version and build', () => {
   const gradle = fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle, /versionName '1\.10\.0-test'/);
-  assert.match(gradle, /versionCode 16/);
+  assert.match(gradle, /versionName '1\.11\.0-test'/);
+  assert.match(gradle, /versionCode 17/);
   assert.match(java, /@JavascriptInterface public String getAppVersion\(\)/);
   assert.match(html, /function installedVersion\(\)/);
   assert.match(html, /App version/);
@@ -118,5 +118,18 @@ test('equation lab checks both operations without exposing answer in active prom
  assert.equal(check(p,0,7),false);
  assert.equal(check(p,1,7),true);
  assert.equal(check(p,1,21),false);
+ assert.equal(check(p,2,25),true);
  assert.equal(check(p,2,7),false);
+ const negative={x:4,factor:3,offset:-5,total:7};
+ assert.equal(check(negative,0,12),true);
+ assert.equal(check(negative,1,4),true);
+ assert.equal(check(negative,2,7),true);
+});
+
+test('equation lab tracks errors and requires verification',()=>{
+ assert.match(html,/stepErrors:\[0,0,0\]/);
+ assert.match(html,/function saveLabProgress\(/);
+ assert.match(html,/stepLab\.stage===3/);
+ assert.match(html,/mathStepLabHistory/);
+ assert.match(html,/function stepLabExpression\(/);
 });
