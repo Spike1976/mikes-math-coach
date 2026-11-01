@@ -568,7 +568,7 @@ function renderFoundationPractice(){
  screen.innerHTML='<div class="eyebrow">Ain’t Cloud Software · Foundation practice</div><h1>'+q.skill[0].toUpperCase()+q.skill.slice(1)+'</h1><div class="formula">'+q.prompt+'</div><div class="free-response"><label for="foundationAnswer">Your answer</label><div class="answer-entry"><input id="foundationAnswer" type="number" inputmode="decimal" step="any" placeholder="Enter number"><button onclick="checkFoundationAnswer()">Check</button></div><div id="foundationFeedback" role="status" aria-live="polite"></div></div><button class="next quiet" onclick="startFoundationPractice(\''+q.skill+'\')">New problem</button><button class="next quiet" onclick="home()">Back to home</button>';
 }
 function checkFoundationAnswer(){
- if(!foundationSession)return;
+ if(!foundationSession||foundationSession.completed)return;
  const input=document.getElementById("foundationAnswer"),feedback=document.getElementById("foundationFeedback");
  if(!input||!feedback)return;
  const raw=input.value.trim(),value=Number(raw),q=foundationSession.question;
@@ -577,7 +577,7 @@ function checkFoundationAnswer(){
  const history=readFoundationHistory();
  history.push({at:new Date().toISOString(),skill:q.skill,correct});
  localStorage.foundationAttempts=JSON.stringify(history.slice(-300));
- if(correct){feedback.textContent="Correct. You can try another problem.";input.disabled=true}
+ if(correct){foundationSession.completed=true;feedback.textContent="Correct. You can try another problem.";input.disabled=true}
  else{foundationSession.mistakes++;feedback.textContent="Not quite. "+q.hint}
 }
 function labHistory(){
