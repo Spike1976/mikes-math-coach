@@ -39,8 +39,8 @@ test('layout supports screen readers and reduced motion preferences', () => {
 
 test('Settings reports installed Android version and build', () => {
   const gradle = fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle, /versionName '1\.18\.0-test'/);
-  assert.match(gradle, /versionCode 25/);
+  assert.match(gradle, /versionName '1\.19\.0-test'/);
+  assert.match(gradle, /versionCode 26/);
   assert.match(java, /@JavascriptInterface public String getAppVersion\(\)/);
   assert.match(html, /function installedVersion\(\)/);
   assert.match(html, /App version/);
@@ -251,4 +251,13 @@ test('local practice data is safely readable after repeated app initialization',
   global.localStorage.foundationAttempts='{bad';
   assert.deepEqual(makeRead(),[]);
  }finally{global.localStorage=previous}
+});
+
+test('unified dashboard connects learning systems',()=>{
+ assert.ok(html.includes('function combinedLearningStats('));
+ assert.ok(html.includes('function showLearningDashboard('));
+ assert.ok(html.includes('My complete learning dashboard'));
+ assert.ok(html.includes('foundation attempts'));
+ assert.ok(html.includes('verified skills'));
+ assert.ok(html.includes('equation sessions'));
 });
