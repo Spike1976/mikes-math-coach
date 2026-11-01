@@ -520,37 +520,59 @@ function backStep(){stopAudio();if(diagnosticMode){home();return}if(step>0){step
 /* Separate guided equation lab: each intermediate operation is checked independently. */
 let stepLab=null;
 function newStepLabProblem(){
- const x=2+Math.floor(Math.random()*10),factor=2+Math.floor(Math.random()*5),offset=1+Math.floor(Math.random()*9);
+ const x=2+Math.floor(Math.random()*10),factor=2+Math.floor(Math.random()*5);
+ const magnitude=1+Math.floor(Math.random()*9),offset=Math.random()<.5?-magnitude:magnitude;
  return {x,factor,offset,total:factor*x+offset};
 }
 function stepLabResult(problem,stage,answer){
  if(!problem||!Number.isFinite(answer))return false;
- const expected=stage===0?problem.total-problem.offset:stage===1?problem.x:null;
+ const expected=stage===0?problem.total-problem.offset:stage===1?problem.x:stage===2?problem.total:null;
  return expected!==null&&Math.abs(answer-expected)<1e-9;
 }
+function stepLabExpression(p){
+ return p.factor+"x "+(p.offset<0?"− "+Math.abs(p.offset):"+ "+p.offset)+" = "+p.total;
+}
+function saveLabProgress(record){
+ try{
+  const items=JSON.parse(localStorage.mathStepLabHistory||"[]");
+  items.push(record);
+  localStorage.mathStepLabHistory=JSON.stringify(items.slice(-100));
+ }catch(e){localStorage.mathStepLabHistory=JSON.stringify([record])}
+}
 function startStepLab(){
- stopAudio();diagnosticMode=false;stepLab={problem:newStepLabProblem(),stage:0,errors:0};renderStepLab();
+ stopAudio();diagnosticMode=false;
+ stepLab={problem:newStepLabProblem(),stage:0,errors:0,stepErrors:[0,0,0],started:Date.now(),saved:false};
+ renderStepLab();
 }
 function renderStepLab(){
  if(!stepLab)return;
- const p=stepLab.problem,finished=stepLab.stage>=2;
- bar.style.width=(finished?100:stepLab.stage*50)+'%';
- screen.innerHTML='<div class="eyebrow">Interactive equation lab · '+(finished?'Complete':'Step '+(stepLab.stage+1)+' of 2')+'</div><h1>Solve the equation yourself</h1><div class="formula">'+p.factor+'x + '+p.offset+' = '+p.total+'</div>'+
- (finished?'<div class="coach"><strong>Correct. x = '+p.x+'.</strong> You isolated x by undoing addition and then division.</div><button class="next" onclick="startStepLab()">Try fresh numbers</button><button class="next quiet" onclick="home()">Back to lessons</button>':
- '<div class="teach"><h2>'+(stepLab.stage===0?'Step 1 · Undo addition':'Step 2 · Undo multiplication')+'</h2><p>'+(stepLab.stage===0?'Subtract '+p.offset+' from both sides. What is '+p.total+' − '+p.offset+'?':'Divide '+(p.total-p.offset)+' by '+p.factor+'. What is x?')+'</p></div><div class="free-response"><label for="stepLabAnswer">Your intermediate result</label><div class="answer-entry"><input id="stepLabAnswer" type="number" inputmode="decimal" step="any" placeholder="Enter number"><button onclick="checkStepLab()">Check step</button></div><div id="stepLabFeedback" role="status" aria-live="polite"></div></div><button class="next quiet" onclick="home()">Exit lab</button>');
+ const p=stepLab.problem,finished=stepLab.stage>=3;
+ bar.style.width=(finished?100:stepLab.stage*100/3)+'%';
+ const stepText=stepLab.stage===0
+  ?'Undo '+(p.offset<0?'subtraction':'addition')+' on both sides. What is '+p.total+(p.offset<0?' + ':' − ')+Math.abs(p.offset)+'?'
+  :stepLab.stage===1?'Divide '+(p.total-p.offset)+' by '+p.factor+'. What is x?'
+  :'Check your solution by substituting x = '+p.x+'. What is '+p.factor+' × '+p.x+(p.offset<0?' − ':' + ')+Math.abs(p.offset)+'?';
+ screen.innerHTML='<div class="eyebrow">Interactive equation lab · '+(finished?'Complete':'Step '+(stepLab.stage+1)+' of 3')+'</div><h1>Solve the equation yourself</h1><div class="formula">'+stepLabExpression(p)+'</div>'+
+ (finished?'<div class="coach"><strong>Verified! x = '+p.x+'.</strong> You solved and checked your answer. Mistakes this session: '+stepLab.errors+'.</div><button class="next" onclick="startStepLab()">Try fresh numbers</button><button class="next quiet" onclick="home()">Back to lessons</button>':
+ '<div class="teach"><h2>'+['Undo the constant','Undo multiplication','Verify your solution'][stepLab.stage]+'</h2><p>'+stepText+'</p></div><div class="free-response"><label for="stepLabAnswer">Your result</label><div class="answer-entry"><input id="stepLabAnswer" type="number" inputmode="decimal" step="any" placeholder="Enter number"><button onclick="checkStepLab()">Check step</button></div><div id="stepLabFeedback" role="status" aria-live="polite"></div></div><button class="next quiet" onclick="home()">Exit lab</button>');
 }
 function checkStepLab(){
- if(!stepLab||stepLab.stage>=2)return;
+ if(!stepLab||stepLab.stage>=3)return;
  const input=document.getElementById("stepLabAnswer"),feedback=document.getElementById("stepLabFeedback");
  if(!input||!feedback)return;
  const raw=input.value.trim(),value=Number(raw);
  if(!raw||!Number.isFinite(value)){feedback.textContent="Enter a valid number.";return}
  if(!stepLabResult(stepLab.problem,stepLab.stage,value)){
-  stepLab.errors++;
-  feedback.textContent=stepLab.stage===0?"Check subtraction first; subtract the same amount on each side.":"Check division; the multiplier must be undone.";
+  stepLab.errors++;stepLab.stepErrors[stepLab.stage]++;
+  feedback.textContent=["Check the inverse operation on both sides.","Divide by the coefficient of x.","Substitute your x back into the original equation."][stepLab.stage];
   return;
  }
- stepLab.stage++;renderStepLab();
+ stepLab.stage++;
+ if(stepLab.stage===3&&!stepLab.saved){
+  saveLabProgress({at:new Date().toISOString(),errors:stepLab.errors,stepErrors:[...stepLab.stepErrors],durationSeconds:Math.round((Date.now()-stepLab.started)/1000),completed:true});
+  stepLab.saved=true;
+ }
+ renderStepLab();
 }
 function numericChoiceAnswer(l){
  if(!l||!Array.isArray(l.a)||!Number.isInteger(l.ok))return null;
