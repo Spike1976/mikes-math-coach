@@ -39,8 +39,8 @@ test('layout supports screen readers and reduced motion preferences', () => {
 
 test('Settings reports installed Android version and build', () => {
   const gradle = fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle, /versionName '1\.9\.0-test'/);
-  assert.match(gradle, /versionCode 15/);
+  assert.match(gradle, /versionName '1\.10\.0-test'/);
+  assert.match(gradle, /versionCode 16/);
   assert.match(java, /@JavascriptInterface public String getAppVersion\(\)/);
   assert.match(html, /function installedVersion\(\)/);
   assert.match(html, /App version/);
@@ -101,4 +101,22 @@ test('typed answer feature remains in lesson mode only',()=>{
  assert.match(html,/if\(diagnosticMode\|\|locked\)return;/);
  assert.match(html,/pick\(l\.ok,target\)/);
  assert.match(html,/type="number"/);
+});
+
+test('developer branding is present on header and settings',()=>{
+ const count=html.split('Ain’t Cloud Software').length-1;
+ assert.ok(count>=2);
+ assert.match(html,/Developed by/);
+});
+test('equation lab checks both operations without exposing answer in active prompt',()=>{
+ for(const fn of ['newStepLabProblem','stepLabResult','startStepLab','renderStepLab','checkStepLab'])assert.ok(html.includes('function '+fn+'('));
+ const src=html.match(/function stepLabResult\(problem,stage,answer\)\{[\s\S]*?\n\}/);
+ assert.ok(src);
+ const check=new Function(src[0]+';return stepLabResult')();
+ const p={x:7,factor:3,offset:4,total:25};
+ assert.equal(check(p,0,21),true);
+ assert.equal(check(p,0,7),false);
+ assert.equal(check(p,1,7),true);
+ assert.equal(check(p,1,21),false);
+ assert.equal(check(p,2,7),false);
 });
