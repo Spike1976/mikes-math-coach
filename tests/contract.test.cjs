@@ -39,8 +39,8 @@ test('layout supports screen readers and reduced motion preferences', () => {
 
 test('Settings reports installed Android version and build', () => {
   const gradle = fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle, /versionName '1\.16\.0-test'/);
-  assert.match(gradle, /versionCode 22/);
+  assert.match(gradle, /versionName '1\.16\.1-test'/);
+  assert.match(gradle, /versionCode 23/);
   assert.match(java, /@JavascriptInterface public String getAppVersion\(\)/);
   assert.match(html, /function installedVersion\(\)/);
   assert.match(html, /App version/);
@@ -169,17 +169,15 @@ test('foundation practice supports four skills and chooses weakest',()=>{
  assert.match(html,/Practice my weakest foundation skill/);
 });
 
-test('adaptive foundation levels adjust to recent accuracy',()=>{
- const match=html.match(/function foundationLevel\(skill,rows=readFoundationHistory\(\)\)\{[\s\S]*?\n\}/);
+test('adaptive levels use performance at current difficulty',()=>{
+ const match=html.match(/function foundationLevel[^]*?\n\}/);
  assert.ok(match);
  const level=new Function('const readFoundationHistory=()=>[];'+match[0]+';return foundationLevel')();
- const rows=(correctCount)=>Array.from({length:10},(_,i)=>({skill:'arithmetic',correct:i<correctCount}));
+ const make=(n,lev)=>Array.from({length:8},(_,i)=>({skill:'arithmetic',correct:i<n,level:lev}));
  assert.equal(level('arithmetic',[]),1);
- assert.equal(level('arithmetic',rows(6)),1);
- assert.equal(level('arithmetic',rows(7)),1);
- assert.equal(level('arithmetic',rows(9)),2);
- assert.equal(level('arithmetic',rows(9).map(r=>({...r,level:2}))),3);
- assert.equal(level('arithmetic',rows(4).map(r=>({...r,level:3}))),2);
+ assert.equal(level('arithmetic',make(7,1)),2);
+ assert.equal(level('arithmetic',make(7,2)),3);
+ assert.equal(level('arithmetic',make(3,3)),2);
 });
 test('foundation generator covers all arithmetic modes and valid decimal fractions',()=>{
  assert.match(html,/mode===1/);
@@ -195,4 +193,9 @@ test('foundation dashboard has per-skill progress and practice controls',()=>{
  assert.match(html,/function showFoundationDashboard\(/);
  assert.match(html,/Foundation progress dashboard/);
  assert.match(html,/recent accuracy/);
+});
+
+test('attempts are recorded once per foundation question',()=>{
+ assert.ok(html.includes('if(!foundationSession.recorded)'));
+ assert.ok(html.includes('foundationSession.recorded=true'));
 });
