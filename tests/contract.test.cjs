@@ -39,8 +39,8 @@ test('layout supports screen readers and reduced motion preferences', () => {
 
 test('Settings reports installed Android version and build', () => {
   const gradle = fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle, /versionName '1\.12\.0-test'/);
-  assert.match(gradle, /versionCode 18/);
+  assert.match(gradle, /versionName '1\.13\.0-test'/);
+  assert.match(gradle, /versionCode 19/);
   assert.match(java, /@JavascriptInterface public String getAppVersion\(\)/);
   assert.match(html, /function installedVersion\(\)/);
   assert.match(html, /App version/);
@@ -144,4 +144,18 @@ test('equation dashboard computes mistake counts without requiring a network',()
  assert.equal(stats.worst,0);
  assert.equal(stats.sessions,2);
  assert.equal(analyze([]).worst,-1);
+});
+
+test('targeted practice selects the worst recorded equation stage',()=>{
+ assert.match(html,/function chooseTargetStep\(/);
+ assert.match(html,/function startTargetedPractice\(/);
+ assert.match(html,/Practice my weakest step/);
+ assert.match(html,/stepLab\.targeted\?3:stepLab\.stage\+1/);
+ const insight=html.match(/function labInsights\(history=labHistory\(\)\)\{[\s\S]*?\n\}/);
+ const select=html.match(/function chooseTargetStep\(history=labHistory\(\)\)\{[\s\S]*?\n\}/);
+ assert.ok(insight&&select);
+ const selectFn=new Function('const labHistory=()=>[];'+insight[0]+select[0]+';return chooseTargetStep')();
+ assert.equal(selectFn([{stepErrors:[0,3,1]}]),1);
+ assert.equal(selectFn([{stepErrors:[1,0,4]}]),2);
+ assert.equal(selectFn([]),0);
 });
