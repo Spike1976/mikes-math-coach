@@ -39,8 +39,8 @@ test('layout supports screen readers and reduced motion preferences', () => {
 
 test('Settings reports installed Android version and build', () => {
   const gradle = fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle, /versionName '1\.11\.0-test'/);
-  assert.match(gradle, /versionCode 17/);
+  assert.match(gradle, /versionName '1\.12\.0-test'/);
+  assert.match(gradle, /versionCode 18/);
   assert.match(java, /@JavascriptInterface public String getAppVersion\(\)/);
   assert.match(html, /function installedVersion\(\)/);
   assert.match(html, /App version/);
@@ -132,4 +132,16 @@ test('equation lab tracks errors and requires verification',()=>{
  assert.match(html,/stepLab\.stage===3/);
  assert.match(html,/mathStepLabHistory/);
  assert.match(html,/function stepLabExpression\(/);
+});
+
+test('equation dashboard computes mistake counts without requiring a network',()=>{
+ for(const fn of ['labHistory','labInsights','showLabHistory'])assert.ok(html.includes('function '+fn+'('));
+ const src=html.match(/function labInsights\(history=labHistory\(\)\)\{[\s\S]*?\n\}/);
+ assert.ok(src);
+ const analyze=new Function(src[0]+';return labInsights')();
+ const stats=analyze([{stepErrors:[1,0,2]},{stepErrors:[2,1,0]}]);
+ assert.deepEqual(stats.counts,[3,1,2]);
+ assert.equal(stats.worst,0);
+ assert.equal(stats.sessions,2);
+ assert.equal(analyze([]).worst,-1);
 });
