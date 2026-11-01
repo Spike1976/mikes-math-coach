@@ -5,14 +5,14 @@ def uploadKeystorePath = System.getenv('MATH_UPLOAD_KEYSTORE')
 
 android {
     namespace 'com.mikesmathcoach'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId 'com.mikesmathcoach.test'
         minSdk 23
-        targetSdk 35
-        versionCode 29
-        versionName '1.22.0-rc2'
+        targetSdk 36
+        versionCode 30
+        versionName '2.0.0'
     }
 
     signingConfigs {
