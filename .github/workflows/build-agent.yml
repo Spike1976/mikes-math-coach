@@ -12,7 +12,7 @@ permissions:
   actions: read
 concurrency:
   group: math-coach-build-agent-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   build-agent:
     runs-on: ubuntu-latest
@@ -26,6 +26,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Install required Android SDK
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - uses: gradle/actions/setup-gradle@v4
