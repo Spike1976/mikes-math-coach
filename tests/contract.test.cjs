@@ -331,3 +331,9 @@ test('continuous integration checks lint and unsigned bundle without publishing 
  assert.match(workflow,/UNSIGNED-NOT-FOR-PLAY/);
  assert.match(workflow,/test -s app\/build\/outputs\/bundle\/release\/app-release.aab/);
 });
+
+test('production bundle must pass strict signature verification',()=>{
+ const workflow=fs.readFileSync('.github/workflows/android-release.yml','utf8');
+ assert.match(workflow,/jarsigner -verify -strict/);
+ assert.match(workflow,/test -s app\/build\/outputs\/bundle\/release\/app-release.aab/);
+});
