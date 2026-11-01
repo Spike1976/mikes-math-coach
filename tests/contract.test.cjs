@@ -39,8 +39,8 @@ test('layout supports screen readers and reduced motion preferences', () => {
 
 test('Settings reports installed Android version and build', () => {
   const gradle = fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle, /versionName '1\.21\.0-rc1'/);
-  assert.match(gradle, /versionCode 28/);
+  assert.match(gradle, /versionName '1\.22\.0-rc2'/);
+  assert.match(gradle, /versionCode 29/);
   assert.match(java, /@JavascriptInterface public String getAppVersion\(\)/);
   assert.match(html, /function installedVersion\(\)/);
   assert.match(html, /App version/);
@@ -283,4 +283,16 @@ test('offline Android app uses restricted WebView settings',()=>{
  assert.match(java,/setAllowFileAccessFromFileURLs\(false\)/);
  assert.match(java,/setAllowContentAccess\(false\)/);
  assert.match(java,/!"https".equals\(uri.getScheme\(\)\)/);
+});
+
+test('signed release requires externally supplied keystore and credentials',()=>{
+ const gradle=fs.readFileSync('app/build.gradle','utf8');
+ const workflow=fs.readFileSync('.github/workflows/android-release.yml','utf8');
+ assert.match(gradle,/MATH_UPLOAD_KEYSTORE/);
+ assert.match(gradle,/MATH_UPLOAD_STORE_PASSWORD/);
+ assert.match(gradle,/MATH_UPLOAD_KEY_ALIAS/);
+ assert.match(workflow,/bundleRelease/);
+ assert.match(workflow,/environment: production/);
+ assert.match(workflow,/secrets.UPLOAD_KEYSTORE_B64/);
+ assert.doesNotMatch(workflow,/mikes-math-test.keystore.b64/);
 });
