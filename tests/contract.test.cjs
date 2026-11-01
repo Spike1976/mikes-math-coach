@@ -39,8 +39,8 @@ test('layout supports screen readers and reduced motion preferences', () => {
 
 test('Settings reports installed Android version and build', () => {
   const gradle = fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle, /versionName '1\.19\.0-test'/);
-  assert.match(gradle, /versionCode 26/);
+  assert.match(gradle, /versionName '1\.20\.0-test'/);
+  assert.match(gradle, /versionCode 27/);
   assert.match(java, /@JavascriptInterface public String getAppVersion\(\)/);
   assert.match(html, /function installedVersion\(\)/);
   assert.match(html, /App version/);
@@ -260,4 +260,16 @@ test('unified dashboard connects learning systems',()=>{
  assert.ok(html.includes('foundation attempts'));
  assert.ok(html.includes('verified skills'));
  assert.ok(html.includes('equation sessions'));
+});
+
+test('daily learning plan prioritizes due reviews and weaker skills',()=>{
+ const src=html.match(/function dailyLearningRecommendation[^]*?\n\}/);
+ assert.ok(src);
+ const choose=new Function('const combinedLearningStats=()=>({});const dueReviewCourses=()=>[];'+src[0]+';return dailyLearningRecommendation')();
+ const base={foundation:[{skill:'arithmetic',attempts:10,accuracy:55},{skill:'fractions',attempts:5,accuracy:90}],lab:{sessions:0,total:0,worst:-1}};
+ assert.equal(choose(base,2).kind,'review');
+ assert.equal(choose(base,0).skill,'arithmetic');
+ assert.equal(choose({foundation:[{skill:'arithmetic',attempts:10,accuracy:95},{skill:'fractions',attempts:0,accuracy:0}],lab:{sessions:0,total:0,worst:-1}},0).skill,'fractions');
+ assert.match(html,/Start today’s learning session/);
+ assert.match(html,/function startDailyLearning\(/);
 });
