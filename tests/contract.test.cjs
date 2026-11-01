@@ -39,8 +39,8 @@ test('layout supports screen readers and reduced motion preferences', () => {
 
 test('Settings reports installed Android version and build', () => {
   const gradle = fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle, /versionName '1\.16\.1-test'/);
-  assert.match(gradle, /versionCode 23/);
+  assert.match(gradle, /versionName '1\.17\.0-test'/);
+  assert.match(gradle, /versionCode 24/);
   assert.match(java, /@JavascriptInterface public String getAppVersion\(\)/);
   assert.match(html, /function installedVersion\(\)/);
   assert.match(html, /App version/);
@@ -198,4 +198,26 @@ test('foundation dashboard has per-skill progress and practice controls',()=>{
 test('attempts are recorded once per foundation question',()=>{
  assert.ok(html.includes('if(!foundationSession.recorded)'));
  assert.ok(html.includes('foundationSession.recorded=true'));
+});
+
+test('foundation generator stays mathematically consistent on fixed random samples',()=>{
+ const match=html.match(/function foundationProblem[^]*?\n\}/);
+ assert.ok(match);
+ const generate=new Function(match[0]+';return foundationProblem')();
+ for(const level of [1,2,3]) for(const skill of ['arithmetic','fractions','decimals','percentages']){
+   for(let i=0;i<30;i++){
+     const q=generate(skill,level);
+     assert.ok(Number.isFinite(q.answer),q.prompt);
+     assert.equal(q.skill,skill);
+     if(skill==='percentages'){
+       const nums=q.prompt.match(/[0-9]+/g).map(Number);
+       assert.equal(q.answer,nums[0]*nums[1]/100);
+     }
+   }
+ }
+});
+test('malformed foundation history is ignored rather than crashing',()=>{
+ assert.match(html,/function readFoundationHistory\(\)/);
+ assert.match(html,/foundationSkills\.includes\(r\.skill\)/);
+ assert.match(html,/Storage is unavailable/);
 });
