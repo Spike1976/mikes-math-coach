@@ -10,8 +10,8 @@ android {
         applicationId 'com.mikesmathcoach.test'
         minSdk 23
         targetSdk 35
-        versionCode 11
-        versionName '1.6.5-test'
+        versionCode 12
+        versionName '1.7.0-test'
     }
 
     signingConfigs {
