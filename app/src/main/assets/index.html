@@ -50,6 +50,14 @@
     .mini{flex-wrap:wrap}.mini button{min-height:48px;min-width:145px}
     @media(min-width:560px){.app{padding-inline:26px}.card{padding:30px}}
     @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+.visual-panel{margin:12px 0 18px;padding:18px;border:1px solid #427298;background:#0c2136;border-radius:18px;text-align:left}
+.visual-panel h2{font-size:1.15rem;margin:0 0 12px}.visual-panel p{line-height:1.55;color:var(--text);margin:12px 0}
+.visual-actions{display:flex;gap:10px}.visual-actions button{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:700}
+.visual-actions button:disabled{opacity:.35}
+.visual-pieces{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:18px 0}.visual-pieces span{height:54px;border:2px solid #7ea3cb;border-radius:7px}.visual-pieces .filled{background:#ff9b42;border-color:#ff9b42}
+.visual-line{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));align-items:center;gap:0;overflow:hidden;margin:22px 0 14px;border-top:3px solid #799dbf;padding-top:8px}.visual-line span{position:relative;text-align:center;font-size:.76rem;color:var(--muted)}.visual-line span.active{color:#ffc082}.visual-line span.active b{background:#ff9b42;color:#091727;border-radius:50%;padding:5px}
+.visual-flow{display:flex;align-items:center;justify-content:space-around;gap:4px;flex-wrap:wrap;margin:18px 0}.visual-flow span{padding:8px 4px;font-size:.82rem;font-weight:750;color:#ffd1a1}
   </style>
 </head>
 <body><main class="app">
@@ -510,7 +518,46 @@ function render(){
   screen.innerHTML=`<div class="eyebrow">Placement question ${step+1} of ${lessons.length} · ${l.tag}</div><div class="diagNote">No hints, lesson preview, or correctness feedback is shown during placement. Work from what you already know.</div><h1>${l.q}</h1><div class="formula">${paintFormula(safeQuestionFormula(l),l.tag)}</div><div class="answers">${l.a.map((x,i)=>`<button class="choice" onclick="diagnosticPick(${i})"><b>${String.fromCharCode(65+i)}</b><span>${x}</span></button>`).join('')}</div>${audioEnabled?`<div class="mini"><button id="questionSpeakBtn" onclick="speakQuestionOnly()">🔊 Read question only</button></div>`:''}`;return;
  }
  const pref=preferredExplanation(l),teachText=pref?pref[1]:lessonTeaching(l),teachTitle=pref?pref[0]:'Learn this first';
- screen.innerHTML=`<div class="eyebrow">Step ${step+1} of ${lessons.length} · ${l.tag}</div><div class="teach"><h2>${teachTitle}</h2><p>${teachText}</p><button class="next quiet" style="margin-top:14px" id="exampleRevealBtn" onclick="toggleExample()">Show a different example</button><div id="exampleReveal"></div></div><div class="questionLabel">Now prove you understand it</div><h1>${l.q}</h1><div class="formula">${paintFormula(safeQuestionFormula(l),l.tag)}</div><div class="answers">${l.a.map((x,i)=>`<button class="choice ${done&&i===l.ok?'correct':''}" onclick="pick(${i},this)" ${done?'disabled':''}><b>${String.fromCharCode(65+i)}</b><span>${x}</span></button>`).join('')}</div><div id="coach">${done?`<div class="coach"><strong>Saved as correct.</strong> ${l.why}</div><button class="next" onclick="advance()">Next tiny step</button>`:''}</div>${done?'':`<button class="next quiet" id="answerRevealBtn" onclick="revealCurrentAnswer()">👁 Open answer / explanation</button><div id="answerReveal"></div>`}<div class="mini">${audioEnabled?`<button id="speakBtn" onclick="speak()">🔊 Read concept</button>`:''}<button onclick="explainAnotherWay()">💡 Explain it another way</button></div>`;
+ screen.innerHTML=`<div class="eyebrow">Step ${step+1} of ${lessons.length} · ${l.tag}</div><div class="teach"><h2>${teachTitle}</h2><p>${teachText}</p><button class="next quiet" style="margin-top:14px" id="exampleRevealBtn" onclick="toggleExample()">Show a different example</button><div id="exampleReveal"></div></div><button class="next quiet" type="button" onclick="showVisualDemo(0)">🧩 Show interactive visual lesson</button><div id="visualDemo" aria-live="polite"></div><div class="questionLabel">Now prove you understand it</div><h1>${l.q}</h1><div class="formula">${paintFormula(safeQuestionFormula(l),l.tag)}</div><div class="answers">${l.a.map((x,i)=>`<button class="choice ${done&&i===l.ok?'correct':''}" onclick="pick(${i},this)" ${done?'disabled':''}><b>${String.fromCharCode(65+i)}</b><span>${x}</span></button>`).join('')}</div><div id="coach">${done?`<div class="coach"><strong>Saved as correct.</strong> ${l.why}</div><button class="next" onclick="advance()">Next tiny step</button>`:''}</div>${done?'':`<button class="next quiet" id="answerRevealBtn" onclick="revealCurrentAnswer()">👁 Open answer / explanation</button><div id="answerReveal"></div>`}<div class="mini">${audioEnabled?`<button id="speakBtn" onclick="speak()">🔊 Read concept</button>`:''}<button onclick="explainAnotherWay()">💡 Explain it another way</button></div>`;
+}
+
+/* Visual demonstrations use independent sample numbers, never the active answer. */
+function visualDemoKind(l){
+ const tag=String(l.tag||"").toLowerCase(),course=String(lessonCourse(l)||"").toLowerCase();
+ if(/fraction/.test(tag+" "+course))return "fraction";
+ if(/negative|number line|integer/.test(tag+" "+course))return "line";
+ return "steps";
+}
+function visualDemoFrames(l){
+ const kind=visualDemoKind(l);
+ if(kind==="fraction")return [
+  {title:"The whole",detail:"Four equal pieces make one whole.",bar:0},
+  {title:"One quarter",detail:"One of four equal parts is shaded.",bar:1},
+  {title:"Three quarters",detail:"Three of four equal parts are shaded.",bar:3}
+ ];
+ if(kind==="line")return [
+  {title:"Start at zero",detail:"Zero is the center of this number line.",pos:0},
+  {title:"Move left",detail:"Negative numbers are to the left of zero.",pos:-2},
+  {title:"Move right",detail:"Positive numbers are to the right of zero.",pos:3}
+ ];
+ return [
+  {title:"Read the operation",detail:"Identify the symbol and what it asks you to do."},
+  {title:"Try a different example",detail:exampleText(l).replace(/<[^>]*>/g," ")},
+  {title:"Explain the method",detail:"Return to your question and apply the same method using its own numbers."}
+ ];
+}
+function visualDemoArt(kind,frame){
+ if(kind==="fraction")return '<div class="visual-pieces" aria-label="'+frame.bar+' out of 4 equal parts shaded">'+Array.from({length:4},(_,i)=>'<span class="'+(i<frame.bar?'filled':'')+'"></span>').join("")+'</div>';
+ if(kind==="line")return '<div class="visual-line" role="img" aria-label="Number line with marker at '+frame.pos+'">'+Array.from({length:9},(_,i)=>{const n=i-4;return '<span class="'+(n===frame.pos?'active':'')+'"><b>'+n+'</b></span>'}).join("")+'</div>';
+ return '<div class="visual-flow" aria-hidden="true"><span>Understand</span><span>→</span><span>Practice</span><span>→</span><span>Check</span></div>';
+}
+function showVisualDemo(index=0){
+ if(diagnosticMode)return;
+ const l=lessons[step],box=document.querySelector("#visualDemo");
+ if(!box||!l)return;
+ hintUsed=true;
+ const frames=visualDemoFrames(l),i=Math.max(0,Math.min(frames.length-1,index)),frame=frames[i],kind=visualDemoKind(l);
+ box.innerHTML='<div class="visual-panel"><div class="eyebrow">Visual coach · '+(i+1)+' of '+frames.length+'</div><h2>'+frame.title+'</h2>'+visualDemoArt(kind,frame)+'<p>'+frame.detail+'</p><div class="visual-actions"><button type="button" onclick="showVisualDemo('+(i-1)+')" '+(i===0?'disabled':'')+'>← Previous</button><button type="button" onclick="showVisualDemo('+(i+1)+')" '+(i===frames.length-1?'disabled':'')+'>Next visual →</button></div></div>';
 }
 function toggleExample(){
  hintUsed=true;
