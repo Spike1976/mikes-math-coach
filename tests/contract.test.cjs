@@ -70,3 +70,18 @@ test('spaced review interval policy rewards unaided accuracy', () => {
   assert.equal(hinted.intervalDays,1);
   assert.equal(hinted.stage,0);
 });
+
+test('mastery requires independent success on separated days', () => {
+  const match=html.match(/function reviewSchedule\(previous,correct,usedHint,now\)\{[\s\S]*?\n\}/);
+  assert.ok(match);
+  const schedule=new Function(match[0]+';return reviewSchedule')();
+  const day=86400000,t=1700000000000;
+  let state=schedule(null,true,false,t);
+  state=schedule(state,true,false,t+day);
+  state=schedule(state,true,false,t+day*2);
+  assert.equal(state.mastered,true);
+  const sameDay=schedule(schedule(schedule(null,true,false,t),true,false,t+1000),true,false,t+2000);
+  assert.equal(sameDay.mastered,false);
+  assert.equal(schedule(state,false,false,t+day*3).mastered,false);
+  assert.equal(schedule(state,true,true,t+day*3).mastered,false);
+});
