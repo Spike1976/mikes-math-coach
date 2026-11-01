@@ -39,8 +39,8 @@ test('layout supports screen readers and reduced motion preferences', () => {
 
 test('Settings reports installed Android version and build', () => {
   const gradle = fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle, /versionName '1\.14\.0-test'/);
-  assert.match(gradle, /versionCode 20/);
+  assert.match(gradle, /versionName '1\.15\.0-test'/);
+  assert.match(gradle, /versionCode 21/);
   assert.match(java, /@JavascriptInterface public String getAppVersion\(\)/);
   assert.match(html, /function installedVersion\(\)/);
   assert.match(html, /App version/);
@@ -167,4 +167,23 @@ test('foundation practice supports four skills and chooses weakest',()=>{
  for(const name of ['arithmetic','fractions','decimals','percentages'])assert.ok(skills[0].includes(name));
  assert.match(html,/foundationSession\.completed=true/);
  assert.match(html,/Practice my weakest foundation skill/);
+});
+
+test('adaptive foundation levels adjust to recent accuracy',()=>{
+ const match=html.match(/function foundationLevel\(skill,rows=readFoundationHistory\(\)\)\{[\s\S]*?\n\}/);
+ assert.ok(match);
+ const level=new Function('const readFoundationHistory=()=>[];'+match[0]+';return foundationLevel')();
+ const rows=(correctCount)=>Array.from({length:10},(_,i)=>({skill:'arithmetic',correct:i<correctCount}));
+ assert.equal(level('arithmetic',[]),1);
+ assert.equal(level('arithmetic',rows(6)),1);
+ assert.equal(level('arithmetic',rows(7)),2);
+ assert.equal(level('arithmetic',rows(9)),3);
+});
+test('foundation generator covers all arithmetic modes and valid decimal fractions',()=>{
+ assert.match(html,/mode===1/);
+ assert.match(html,/mode===2/);
+ assert.match(html,/mode===3/);
+ assert.match(html,/Division undoes multiplication/);
+ assert.match(html,/Add the numerators because the denominators match/);
+ assert.match(html,/foundationProblem\(chosen,level\)/);
 });
