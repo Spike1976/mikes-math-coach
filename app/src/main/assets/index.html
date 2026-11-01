@@ -58,6 +58,8 @@
 .visual-pieces{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:18px 0}.visual-pieces span{height:54px;border:2px solid #7ea3cb;border-radius:7px}.visual-pieces .filled{background:#ff9b42;border-color:#ff9b42}
 .visual-line{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));align-items:center;gap:0;overflow:hidden;margin:22px 0 14px;border-top:3px solid #799dbf;padding-top:8px}.visual-line span{position:relative;text-align:center;font-size:.76rem;color:var(--muted)}.visual-line span.active{color:#ffc082}.visual-line span.active b{background:#ff9b42;color:#091727;border-radius:50%;padding:5px}
 .visual-flow{display:flex;align-items:center;justify-content:space-around;gap:4px;flex-wrap:wrap;margin:18px 0}.visual-flow span{padding:8px 4px;font-size:.82rem;font-weight:750;color:#ffd1a1}
+
+.free-response{background:#112c44;border:1px solid #426d91;border-radius:16px;padding:15px;margin:16px 0}.free-response label{display:block;font-weight:850;font-size:1.05rem}.free-response p{color:var(--muted);font-size:.87rem;line-height:1.45}.answer-entry{display:flex;gap:9px}.answer-entry input{min-width:0;flex:1;background:#081a2c;color:var(--text);border:1px solid #7b9ab7;border-radius:12px;padding:13px;font:inherit;font-size:1.15rem}.answer-entry button{border:0;border-radius:12px;padding:12px 18px;background:var(--orange);color:#0b1422;font-weight:900}.answer-entry button:disabled{opacity:.5}#workingFeedback{min-height:22px;margin-top:10px;color:#ffd09e}
   </style>
 </head>
 <body><main class="app">
@@ -511,6 +513,32 @@ function startGuided(){let i=+(localStorage.guidedIndex||0);if(i>=guidedOrder.le
 function shuffleStep(original){const l={...original,a:[...original.a]},correct=l.a[l.ok];for(let i=l.a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[l.a[i],l.a[j]]=[l.a[j],l.a[i]]}l.ok=l.a.indexOf(correct);return l}
 function start(course=currentCourse,asGuided=false){stopAudio();diagnosticMode=false;guidedMode=asGuided;currentCourse=course;lessons=lessonBanks[course].steps.map(shuffleStep);step=0;mistakes=0;reviewQueue=[];reviewKeys=new Set();completedSteps=new Set();render()}
 function backStep(){stopAudio();if(diagnosticMode){home();return}if(step>0){step--;render()}else home()}
+
+function numericChoiceAnswer(l){
+ if(!l||!Array.isArray(l.a)||!Number.isInteger(l.ok))return null;
+ const value=String(l.a[l.ok]).trim().replace(/,/g,"").replace(/\$/g,"");
+ return /^[-+]?(?:\d+(?:\.\d+)?|\.\d+)$/.test(value)?Number(value):null;
+}
+function freeResponseMarkup(l,done){
+ const answer=numericChoiceAnswer(l);
+ if(answer===null)return "";
+ return '<div class="free-response"><label for="workingAnswer">Solve it yourself</label><p>Type your number, then check your work. Multiple-choice answers remain available below.</p><div class="answer-entry"><input id="workingAnswer" type="number" inputmode="decimal" step="any" placeholder="Your answer" '+(done?'disabled':'')+' aria-label="Your numeric answer"><button type="button" onclick="checkWorkingAnswer()" '+(done?'disabled':'')+'>Check</button></div><div id="workingFeedback" role="status" aria-live="polite"></div></div>';
+}
+function checkWorkingAnswer(){
+ if(diagnosticMode||locked)return;
+ const l=lessons[step],expected=numericChoiceAnswer(l),entry=document.querySelector("#workingAnswer"),feedback=document.querySelector("#workingFeedback");
+ if(expected===null||!entry||!feedback)return;
+ const raw=entry.value.trim(),actual=Number(raw);
+ if(!raw||!Number.isFinite(actual)){feedback.textContent="Enter a valid number first.";return}
+ const correct=Math.abs(actual-expected)<=1e-9*Math.max(1,Math.abs(expected));
+ if(!correct){feedback.textContent="Not quite. Check your operation and try again, or choose one of the answers below.";return}
+ const buttons=[...document.querySelectorAll(".answers .choice")];
+ const target=buttons[l.ok];
+ if(!target){feedback.textContent="Answer choices unavailable. Please try again.";return}
+ feedback.textContent="Correct! Your own answer matches.";
+ pick(l.ok,target);
+ entry.disabled=true;
+}
 function render(){
  stopAudio();
  const l=lessons[step],done=completedSteps.has(step);locked=done;questionStarted=Date.now();hintUsed=false;explainIndex=0;explanationStyles=[];bar.style.width=((step+1)/lessons.length*100)+'%';
@@ -518,7 +546,7 @@ function render(){
   screen.innerHTML=`<div class="eyebrow">Placement question ${step+1} of ${lessons.length} · ${l.tag}</div><div class="diagNote">No hints, lesson preview, or correctness feedback is shown during placement. Work from what you already know.</div><h1>${l.q}</h1><div class="formula">${paintFormula(safeQuestionFormula(l),l.tag)}</div><div class="answers">${l.a.map((x,i)=>`<button class="choice" onclick="diagnosticPick(${i})"><b>${String.fromCharCode(65+i)}</b><span>${x}</span></button>`).join('')}</div>${audioEnabled?`<div class="mini"><button id="questionSpeakBtn" onclick="speakQuestionOnly()">🔊 Read question only</button></div>`:''}`;return;
  }
  const pref=preferredExplanation(l),teachText=pref?pref[1]:lessonTeaching(l),teachTitle=pref?pref[0]:'Learn this first';
- screen.innerHTML=`<div class="eyebrow">Step ${step+1} of ${lessons.length} · ${l.tag}</div><div class="teach"><h2>${teachTitle}</h2><p>${teachText}</p><button class="next quiet" style="margin-top:14px" id="exampleRevealBtn" onclick="toggleExample()">Show a different example</button><div id="exampleReveal"></div></div><button class="next quiet" type="button" onclick="showVisualDemo(0)">🧩 Show interactive visual lesson</button><div id="visualDemo" aria-live="polite"></div><div class="questionLabel">Now prove you understand it</div><h1>${l.q}</h1><div class="formula">${paintFormula(safeQuestionFormula(l),l.tag)}</div><div class="answers">${l.a.map((x,i)=>`<button class="choice ${done&&i===l.ok?'correct':''}" onclick="pick(${i},this)" ${done?'disabled':''}><b>${String.fromCharCode(65+i)}</b><span>${x}</span></button>`).join('')}</div><div id="coach">${done?`<div class="coach"><strong>Saved as correct.</strong> ${l.why}</div><button class="next" onclick="advance()">Next tiny step</button>`:''}</div>${done?'':`<button class="next quiet" id="answerRevealBtn" onclick="revealCurrentAnswer()">👁 Open answer / explanation</button><div id="answerReveal"></div>`}<div class="mini">${audioEnabled?`<button id="speakBtn" onclick="speak()">🔊 Read concept</button>`:''}<button onclick="explainAnotherWay()">💡 Explain it another way</button></div>`;
+ screen.innerHTML=`<div class="eyebrow">Step ${step+1} of ${lessons.length} · ${l.tag}</div><div class="teach"><h2>${teachTitle}</h2><p>${teachText}</p><button class="next quiet" style="margin-top:14px" id="exampleRevealBtn" onclick="toggleExample()">Show a different example</button><div id="exampleReveal"></div></div><button class="next quiet" type="button" onclick="showVisualDemo(0)">🧩 Show interactive visual lesson</button><div id="visualDemo" aria-live="polite"></div><div class="questionLabel">Now prove you understand it</div><h1>${l.q}</h1><div class="formula">${paintFormula(safeQuestionFormula(l),l.tag)}</div>${freeResponseMarkup(l,done)}<div class="answers">${l.a.map((x,i)=>`<button class="choice ${done&&i===l.ok?'correct':''}" onclick="pick(${i},this)" ${done?'disabled':''}><b>${String.fromCharCode(65+i)}</b><span>${x}</span></button>`).join('')}</div><div id="coach">${done?`<div class="coach"><strong>Saved as correct.</strong> ${l.why}</div><button class="next" onclick="advance()">Next tiny step</button>`:''}</div>${done?'':`<button class="next quiet" id="answerRevealBtn" onclick="revealCurrentAnswer()">👁 Open answer / explanation</button><div id="answerReveal"></div>`}<div class="mini">${audioEnabled?`<button id="speakBtn" onclick="speak()">🔊 Read concept</button>`:''}<button onclick="explainAnotherWay()">💡 Explain it another way</button></div>`;
 }
 
 /* Visual demonstrations use independent sample numbers, never the active answer. */
