@@ -548,10 +548,20 @@ function labInsights(history=labHistory()){
  const total=counts.reduce((a,b)=>a+b,0),worst=total?counts.indexOf(Math.max(...counts)):-1;
  return {labels,counts,total,sessions:history.length,worst};
 }
+function chooseTargetStep(history=labHistory()){
+ const insights=labInsights(history);
+ return insights.worst<0?0:insights.worst;
+}
+function startTargetedPractice(){
+ stopAudio();diagnosticMode=false;
+ const focus=chooseTargetStep();
+ stepLab={problem:newStepLabProblem(),stage:focus,focus,errors:0,stepErrors:[0,0,0],started:Date.now(),saved:false,targeted:true};
+ renderStepLab();
+}
 function showLabHistory(){
  stopAudio();diagnosticMode=false;bar.style.width="0%";
  const data=labInsights(),max=Math.max(1,...data.counts);
- screen.innerHTML='<div class="eyebrow">Ain’t Cloud Software · Learning insights</div><h1>Equation Lab progress</h1><p class="prompt">Your completed practice sessions are stored on this device.</p><div class="profileGrid"><div class="profileStat"><b>'+data.sessions+'</b><small>completed sessions</small></div><div class="profileStat"><b>'+data.total+'</b><small>recorded mistakes</small></div></div><div class="level">WHERE YOU NEED PRACTICE</div>'+data.labels.map((name,i)=>'<div class="topicRow"><strong><span>'+name+'</span><span>'+data.counts[i]+' errors</span></strong><div class="meter"><i style="width:'+(100*data.counts[i]/max)+'%"></i></div></div>').join("")+'<div class="pathbox"><strong>Coach recommendation</strong><p>'+(data.worst<0?'Complete an equation lab session to get personalized recommendations.':'Focus on: '+data.labels[data.worst]+'. Repeat the lab with fresh numbers and check the inverse operation before proceeding.')+'</p></div><button class="next" onclick="startStepLab()">Practice recommended skills</button><button class="next quiet" onclick="home()">Back to home</button>';
+ screen.innerHTML='<div class="eyebrow">Ain’t Cloud Software · Learning insights</div><h1>Equation Lab progress</h1><p class="prompt">Your completed practice sessions are stored on this device.</p><div class="profileGrid"><div class="profileStat"><b>'+data.sessions+'</b><small>completed sessions</small></div><div class="profileStat"><b>'+data.total+'</b><small>recorded mistakes</small></div></div><div class="level">WHERE YOU NEED PRACTICE</div>'+data.labels.map((name,i)=>'<div class="topicRow"><strong><span>'+name+'</span><span>'+data.counts[i]+' errors</span></strong><div class="meter"><i style="width:'+(100*data.counts[i]/max)+'%"></i></div></div>').join("")+'<div class="pathbox"><strong>Coach recommendation</strong><p>'+(data.worst<0?'Complete an equation lab session to get personalized recommendations.':'Focus on: '+data.labels[data.worst]+'. Repeat the lab with fresh numbers and check the inverse operation before proceeding.')+'</p></div><button class="next" onclick="startTargetedPractice()">Practice my weakest step</button><button class="next quiet" onclick="startStepLab()">Practice a complete equation</button><button class="next quiet" onclick="home()">Back to home</button>';
 }
 function startStepLab(){
  stopAudio();diagnosticMode=false;
@@ -567,7 +577,7 @@ function renderStepLab(){
   :stepLab.stage===1?'Divide '+(p.total-p.offset)+' by '+p.factor+'. What is x?'
   :'Check your solution by substituting x = '+p.x+'. What is '+p.factor+' × '+p.x+(p.offset<0?' − ':' + ')+Math.abs(p.offset)+'?';
  screen.innerHTML='<div class="eyebrow">Interactive equation lab · '+(finished?'Complete':'Step '+(stepLab.stage+1)+' of 3')+'</div><h1>Solve the equation yourself</h1><div class="formula">'+stepLabExpression(p)+'</div>'+
- (finished?'<div class="coach"><strong>Verified! x = '+p.x+'.</strong> You solved and checked your answer. Mistakes this session: '+stepLab.errors+'.</div><button class="next" onclick="startStepLab()">Try fresh numbers</button><button class="next quiet" onclick="home()">Back to lessons</button>':
+ (finished?'<div class="coach"><strong>'+(stepLab.targeted?'Targeted practice complete.':'Verified! x = '+p.x+'.')+'</strong> Mistakes this session: '+stepLab.errors+'.</div><button class="next" onclick="startStepLab()">Try fresh numbers</button><button class="next quiet" onclick="home()">Back to lessons</button>':
  '<div class="teach"><h2>'+['Undo the constant','Undo multiplication','Verify your solution'][stepLab.stage]+'</h2><p>'+stepText+'</p></div><div class="free-response"><label for="stepLabAnswer">Your result</label><div class="answer-entry"><input id="stepLabAnswer" type="number" inputmode="decimal" step="any" placeholder="Enter number"><button onclick="checkStepLab()">Check step</button></div><div id="stepLabFeedback" role="status" aria-live="polite"></div></div><button class="next quiet" onclick="home()">Exit lab</button>');
 }
 function checkStepLab(){
@@ -581,9 +591,9 @@ function checkStepLab(){
   feedback.textContent=["Check the inverse operation on both sides.","Divide by the coefficient of x.","Substitute your x back into the original equation."][stepLab.stage];
   return;
  }
- stepLab.stage++;
+ stepLab.stage=stepLab.targeted?3:stepLab.stage+1;
  if(stepLab.stage===3&&!stepLab.saved){
-  saveLabProgress({at:new Date().toISOString(),errors:stepLab.errors,stepErrors:[...stepLab.stepErrors],durationSeconds:Math.round((Date.now()-stepLab.started)/1000),completed:true});
+  saveLabProgress({at:new Date().toISOString(),errors:stepLab.errors,stepErrors:[...stepLab.stepErrors],targeted:!!stepLab.targeted,focus:stepLab.focus??null,durationSeconds:Math.round((Date.now()-stepLab.started)/1000),completed:true});
   stepLab.saved=true;
  }
  renderStepLab();
