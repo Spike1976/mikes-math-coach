@@ -39,8 +39,8 @@ test('layout supports screen readers and reduced motion preferences', () => {
 
 test('Settings reports installed Android version and build', () => {
   const gradle = fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle, /versionName '1\.8\.0-test'/);
-  assert.match(gradle, /versionCode 14/);
+  assert.match(gradle, /versionName '1\.9\.0-test'/);
+  assert.match(gradle, /versionCode 15/);
   assert.match(java, /@JavascriptInterface public String getAppVersion\(\)/);
   assert.match(html, /function installedVersion\(\)/);
   assert.match(html, /App version/);
@@ -93,4 +93,12 @@ test('visual tutor has guarded lesson-only walkthrough controls',()=>{
  assert.match(html,/visual-pieces/);
  assert.match(html,/visual-line/);
  assert.match(html,/hintUsed=true;/);
+});
+
+test('typed answer feature remains in lesson mode only',()=>{
+ for(const fn of ['numericChoiceAnswer','freeResponseMarkup','checkWorkingAnswer'])assert.ok(html.includes('function '+fn+'('));
+ assert.match(html,/Solve it yourself/);
+ assert.match(html,/if\(diagnosticMode\|\|locked\)return;/);
+ assert.match(html,/pick\(l\.ok,target\)/);
+ assert.match(html,/type="number"/);
 });
