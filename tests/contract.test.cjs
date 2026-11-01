@@ -39,8 +39,8 @@ test('layout supports screen readers and reduced motion preferences', () => {
 
 test('Settings reports installed Android version and build', () => {
   const gradle = fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle, /versionName '1\.13\.0-test'/);
-  assert.match(gradle, /versionCode 19/);
+  assert.match(gradle, /versionName '1\.14\.0-test'/);
+  assert.match(gradle, /versionCode 20/);
   assert.match(java, /@JavascriptInterface public String getAppVersion\(\)/);
   assert.match(html, /function installedVersion\(\)/);
   assert.match(html, /App version/);
@@ -158,4 +158,13 @@ test('targeted practice selects the worst recorded equation stage',()=>{
  assert.equal(selectFn([{stepErrors:[0,3,1]}]),1);
  assert.equal(selectFn([{stepErrors:[1,0,4]}]),2);
  assert.equal(selectFn([]),0);
+});
+
+test('foundation practice supports four skills and chooses weakest',()=>{
+ for(const fn of ['foundationProblem','readFoundationHistory','weakestFoundationSkill','startFoundationPractice','checkFoundationAnswer'])assert.ok(html.includes('function '+fn+'('));
+ const skills=html.match(/const foundationSkills=\[[^\]]+\]/);
+ assert.ok(skills);
+ for(const name of ['arithmetic','fractions','decimals','percentages'])assert.ok(skills[0].includes(name));
+ assert.match(html,/foundationSession\.completed=true/);
+ assert.match(html,/Practice my weakest foundation skill/);
 });
