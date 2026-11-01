@@ -60,10 +60,12 @@
 .visual-flow{display:flex;align-items:center;justify-content:space-around;gap:4px;flex-wrap:wrap;margin:18px 0}.visual-flow span{padding:8px 4px;font-size:.82rem;font-weight:750;color:#ffd1a1}
 
 .free-response{background:#112c44;border:1px solid #426d91;border-radius:16px;padding:15px;margin:16px 0}.free-response label{display:block;font-weight:850;font-size:1.05rem}.free-response p{color:var(--muted);font-size:.87rem;line-height:1.45}.answer-entry{display:flex;gap:9px}.answer-entry input{min-width:0;flex:1;background:#081a2c;color:var(--text);border:1px solid #7b9ab7;border-radius:12px;padding:13px;font:inherit;font-size:1.15rem}.answer-entry button{border:0;border-radius:12px;padding:12px 18px;background:var(--orange);color:#0b1422;font-weight:900}.answer-entry button:disabled{opacity:.5}#workingFeedback{min-height:22px;margin-top:10px;color:#ffd09e}
+    .brand-byline{font-size:.69rem;letter-spacing:.045em;color:#c8d8ec;margin-top:4px;font-weight:650}
+    .brand-credit{color:var(--orange);font-size:1.02rem;font-weight:800;margin:4px 0}
   </style>
 </head>
 <body><main class="app">
-  <header><div class="brand"><span>MIKE'S</span> MATH COACH</div><div class="streak" id="streak">🔥 0 mastered</div></header>
+  <header><div><div class="brand"><span>MIKE'S</span> MATH COACH</div><div class="brand-byline">by Ain’t Cloud Software</div></div><div class="streak" id="streak">🔥 0 mastered</div></header>
   <nav class="topnav" style="grid-template-columns:1fr 1fr 1fr"><button onclick="home()">🏠 Main</button><button onclick="backStep()">← Back</button><button onclick="showSettings()">⚙ Settings</button></nav>
   <div class="progress"><i id="bar"></i></div>
   <section class="card" id="screen"></section>
@@ -412,7 +414,7 @@ function installedVersion(){try{if(window.AndroidSpeech&&typeof window.AndroidSp
 function showSettings(){
  stopAudio();
  bar.style.width='0%';
- screen.innerHTML=`<div class="home"><div class="eyebrow">Learning & audio settings</div><h1>Make the coach work your way.</h1><div class="settingRow"><div><strong>Lesson audio</strong><br><small style="color:var(--muted)">Turn narration on or off. Turning it off stops current speech immediately.</small></div><button class="toggle ${audioEnabled?'on':''}" onclick="setAudioEnabled(${!audioEnabled})">${audioEnabled?'ON':'OFF'}</button></div><div class="level">PREFERRED TEACHING STYLE</div><p class="prompt">Choose one, or let Adaptive Mix learn which methods actually produce the best results for you.</p><div class="answers">${teachingStyles.map(([k,n])=>`<button class="choice styleBtn ${preferredTeachingStyle===k?'selected':''}" onclick="setTeachingStyle('${k}')"><b>${preferredTeachingStyle===k?'✓':'→'}</b><span>${n}</span></button>`).join('')}</div><div class="settingRow"><div><strong>App version</strong><br><small style="color:var(--muted)">Installed Android build</small></div><span style="font-weight:800;color:var(--blue)">${installedVersion()}</span></div><button class="next quiet" onclick="home()">Save & return</button></div>`;
+ screen.innerHTML=`<div class="home"><div class="eyebrow">Learning & audio settings</div><h1>Make the coach work your way.</h1><div class="settingRow"><div><strong>Lesson audio</strong><br><small style="color:var(--muted)">Turn narration on or off. Turning it off stops current speech immediately.</small></div><button class="toggle ${audioEnabled?'on':''}" onclick="setAudioEnabled(${!audioEnabled})">${audioEnabled?'ON':'OFF'}</button></div><div class="level">PREFERRED TEACHING STYLE</div><p class="prompt">Choose one, or let Adaptive Mix learn which methods actually produce the best results for you.</p><div class="answers">${teachingStyles.map(([k,n])=>`<button class="choice styleBtn ${preferredTeachingStyle===k?'selected':''}" onclick="setTeachingStyle('${k}')"><b>${preferredTeachingStyle===k?'✓':'→'}</b><span>${n}</span></button>`).join('')}</div><div class="settingRow"><div><strong>App version</strong><br><small style="color:var(--muted)">Installed Android build</small></div><span style="font-weight:800;color:var(--blue)">${installedVersion()}</span></div><div class="settingRow"><div><strong>Developed by</strong><div class="brand-credit">Ain’t Cloud Software</div><small style="color:var(--muted)">Mike’s Math Coach · Made for real learning</small></div></div><button class="next quiet" onclick="home()">Save & return</button></div>`;
 }
 function preferredExplanation(l){
  if(preferredTeachingStyle==='plain')return ["Plain-English breakdown",lessonTeaching(l)];
@@ -506,7 +508,7 @@ function finishDiagnostic(){
 }
 function home(){
  diagnosticMode=false;stopAudio();
- const groups=["FOUNDATIONS","COLLEGE MATH","CALCULUS","AI MATHEMATICS"],gi=+(localStorage.guidedIndex||0),nextName=lessonBanks[guidedOrder[Math.min(gi,guidedOrder.length-1)]].name;bar.style.width='0%';screen.innerHTML=`<div class="home"><div class="icon">🧠</div><div class="eyebrow">Your directed learning path</div><h1>Understand it. Prove it. Remember it.</h1><div class="pathbox"><strong>Next guided lesson: ${nextName}</strong><br><span style="color:var(--muted)">Course ${Math.min(gi+1,guidedOrder.length)} of ${guidedOrder.length}. Missed ideas return later until you answer them correctly again.</span></div><button class="next" onclick="startGuided()">Continue my guided path</button><button class="next quiet" onclick="startDueReview()">🔁 Review skills due today (${dueReviewCourses().length} subjects) · ${masterySummary().mastered} verified skills</button><button class="next quiet" onclick="showProfile()">📊 My strengths, weaknesses & learning path</button><button class="next quiet" onclick="startDiagnostic()">Find my real starting point</button><div class="level">MIXED WORKOUTS</div><div class="answers"><button class="choice" onclick="startWorkout(10)"><b>10</b><span><strong>Quick workout</strong><br><small style="color:var(--muted)">Ten fresh problems across the whole path.</small></span></button><button class="choice" onclick="startWorkout(25)"><b>25</b><span><strong>Full workout</strong><br><small style="color:var(--muted)">A serious mixed review with new numbers.</small></span></button><button class="choice" onclick="startWorkout(50)"><b>50</b><span><strong>Iron-brain challenge</strong><br><small style="color:var(--muted)">Fifty problems from foundations through AI math.</small></span></button></div>${groups.map(g=>`<div class="level">${g}</div><div class="answers">${Object.entries(lessonBanks).filter(([k,v])=>v.level===g).map(([k,v])=>`<button class="choice" onclick="${k==='basicmath'?'startBasicWorkout(30)':`start('${k}')`}"><b>→</b><span><strong>${v.name}</strong><br><small style="color:var(--muted)">${v.desc}</small></span></button>`).join('')}</div>`).join('')}<ul><li>Every symbol is taught before it is used</li><li>Examples use many different numbers</li><li>Missed ideas return before mastery</li></ul><button class="supportLink" onclick="showSupport()">♡ Voluntarily support this free tutor</button></div>`;
+ const groups=["FOUNDATIONS","COLLEGE MATH","CALCULUS","AI MATHEMATICS"],gi=+(localStorage.guidedIndex||0),nextName=lessonBanks[guidedOrder[Math.min(gi,guidedOrder.length-1)]].name;bar.style.width='0%';screen.innerHTML=`<div class="home"><div class="icon">🧠</div><div class="eyebrow">Your directed learning path</div><h1>Understand it. Prove it. Remember it.</h1><div class="pathbox"><strong>Next guided lesson: ${nextName}</strong><br><span style="color:var(--muted)">Course ${Math.min(gi+1,guidedOrder.length)} of ${guidedOrder.length}. Missed ideas return later until you answer them correctly again.</span></div><button class="next" onclick="startGuided()">Continue my guided path</button><button class="next quiet" onclick="startStepLab()">✏️ Step-by-step equation lab</button><button class="next quiet" onclick="startDueReview()">🔁 Review skills due today (${dueReviewCourses().length} subjects) · ${masterySummary().mastered} verified skills</button><button class="next quiet" onclick="showProfile()">📊 My strengths, weaknesses & learning path</button><button class="next quiet" onclick="startDiagnostic()">Find my real starting point</button><div class="level">MIXED WORKOUTS</div><div class="answers"><button class="choice" onclick="startWorkout(10)"><b>10</b><span><strong>Quick workout</strong><br><small style="color:var(--muted)">Ten fresh problems across the whole path.</small></span></button><button class="choice" onclick="startWorkout(25)"><b>25</b><span><strong>Full workout</strong><br><small style="color:var(--muted)">A serious mixed review with new numbers.</small></span></button><button class="choice" onclick="startWorkout(50)"><b>50</b><span><strong>Iron-brain challenge</strong><br><small style="color:var(--muted)">Fifty problems from foundations through AI math.</small></span></button></div>${groups.map(g=>`<div class="level">${g}</div><div class="answers">${Object.entries(lessonBanks).filter(([k,v])=>v.level===g).map(([k,v])=>`<button class="choice" onclick="${k==='basicmath'?'startBasicWorkout(30)':`start('${k}')`}"><b>→</b><span><strong>${v.name}</strong><br><small style="color:var(--muted)">${v.desc}</small></span></button>`).join('')}</div>`).join('')}<ul><li>Every symbol is taught before it is used</li><li>Examples use many different numbers</li><li>Missed ideas return before mastery</li></ul><button class="supportLink" onclick="showSupport()">♡ Voluntarily support this free tutor</button></div>`;
 }
 function showSupport(){bar.style.width='0%';screen.innerHTML=`<div class="home"><div class="eyebrow">Keep the tutor growing</div><h1>Support Mike’s Math Coach</h1><p class="prompt">The tutor is free. If it helps you, optional personal support helps pay for new lessons and improvements.</p><div class="qrCrop" style="display:flex;align-items:center;justify-content:center;min-height:120px"><strong style="font-size:1.4rem">$spikestokes</strong></div><a class="cashButton" href="https://cash.app/\$spikestokes" target="_blank" rel="noopener">Open Cash App · \$spikestokes</a><p style="color:var(--muted);font-size:.85rem;line-height:1.45">Support is voluntary. It does not purchase lessons, unlock features, or represent a tax-deductible charitable donation.</p><button class="next quiet" onclick="home()">Back to learning</button></div>`}
 function startGuided(){let i=+(localStorage.guidedIndex||0);if(i>=guidedOrder.length)i=0;guidedMode=true;start(guidedOrder[i],true)}
@@ -514,6 +516,42 @@ function shuffleStep(original){const l={...original,a:[...original.a]},correct=l
 function start(course=currentCourse,asGuided=false){stopAudio();diagnosticMode=false;guidedMode=asGuided;currentCourse=course;lessons=lessonBanks[course].steps.map(shuffleStep);step=0;mistakes=0;reviewQueue=[];reviewKeys=new Set();completedSteps=new Set();render()}
 function backStep(){stopAudio();if(diagnosticMode){home();return}if(step>0){step--;render()}else home()}
 
+
+/* Separate guided equation lab: each intermediate operation is checked independently. */
+let stepLab=null;
+function newStepLabProblem(){
+ const x=2+Math.floor(Math.random()*10),factor=2+Math.floor(Math.random()*5),offset=1+Math.floor(Math.random()*9);
+ return {x,factor,offset,total:factor*x+offset};
+}
+function stepLabResult(problem,stage,answer){
+ if(!problem||!Number.isFinite(answer))return false;
+ const expected=stage===0?problem.total-problem.offset:stage===1?problem.x:null;
+ return expected!==null&&Math.abs(answer-expected)<1e-9;
+}
+function startStepLab(){
+ stopAudio();diagnosticMode=false;stepLab={problem:newStepLabProblem(),stage:0,errors:0};renderStepLab();
+}
+function renderStepLab(){
+ if(!stepLab)return;
+ const p=stepLab.problem,finished=stepLab.stage>=2;
+ bar.style.width=(finished?100:stepLab.stage*50)+'%';
+ screen.innerHTML='<div class="eyebrow">Interactive equation lab · '+(finished?'Complete':'Step '+(stepLab.stage+1)+' of 2')+'</div><h1>Solve the equation yourself</h1><div class="formula">'+p.factor+'x + '+p.offset+' = '+p.total+'</div>'+
+ (finished?'<div class="coach"><strong>Correct. x = '+p.x+'.</strong> You isolated x by undoing addition and then division.</div><button class="next" onclick="startStepLab()">Try fresh numbers</button><button class="next quiet" onclick="home()">Back to lessons</button>':
+ '<div class="teach"><h2>'+(stepLab.stage===0?'Step 1 · Undo addition':'Step 2 · Undo multiplication')+'</h2><p>'+(stepLab.stage===0?'Subtract '+p.offset+' from both sides. What is '+p.total+' − '+p.offset+'?':'Divide '+(p.total-p.offset)+' by '+p.factor+'. What is x?')+'</p></div><div class="free-response"><label for="stepLabAnswer">Your intermediate result</label><div class="answer-entry"><input id="stepLabAnswer" type="number" inputmode="decimal" step="any" placeholder="Enter number"><button onclick="checkStepLab()">Check step</button></div><div id="stepLabFeedback" role="status" aria-live="polite"></div></div><button class="next quiet" onclick="home()">Exit lab</button>');
+}
+function checkStepLab(){
+ if(!stepLab||stepLab.stage>=2)return;
+ const input=document.getElementById("stepLabAnswer"),feedback=document.getElementById("stepLabFeedback");
+ if(!input||!feedback)return;
+ const raw=input.value.trim(),value=Number(raw);
+ if(!raw||!Number.isFinite(value)){feedback.textContent="Enter a valid number.";return}
+ if(!stepLabResult(stepLab.problem,stepLab.stage,value)){
+  stepLab.errors++;
+  feedback.textContent=stepLab.stage===0?"Check subtraction first; subtract the same amount on each side.":"Check division; the multiplier must be undone.";
+  return;
+ }
+ stepLab.stage++;renderStepLab();
+}
 function numericChoiceAnswer(l){
  if(!l||!Array.isArray(l.a)||!Number.isInteger(l.ok))return null;
  const value=String(l.a[l.ok]).trim().replace(/,/g,"").replace(/\$/g,"");
