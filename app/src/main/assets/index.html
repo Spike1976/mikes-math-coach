@@ -543,12 +543,35 @@ function saveLabProgress(record){
 /* Foundation practice uses generated problems and records attempts by skill. */
 let foundationSession=null;
 const foundationSkills=["arithmetic","fractions","decimals","percentages"];
-function foundationProblem(skill){
- const r=(min,max)=>min+Math.floor(Math.random()*(max-min+1));
- if(skill==="fractions"){const d=[2,4,5,10][r(0,3)],n=r(1,d-1);return {skill,prompt:"What is "+n+"/"+d+" as a decimal?",answer:n/d,hint:"Divide the numerator by the denominator."}}
- if(skill==="decimals"){const a=r(10,90)/10,b=r(10,90)/10;return {skill,prompt:"Add "+a.toFixed(1)+" + "+b.toFixed(1),answer:Math.round((a+b)*10)/10,hint:"Align the decimal points before adding."}}
- if(skill==="percentages"){const pct=[10,20,25,50][r(0,3)],base=r(2,15)*20;return {skill,prompt:"What is "+pct+"% of "+base+"?",answer:base*pct/100,hint:"Convert the percent to a fraction out of 100, then multiply."}}
- const a=r(3,45),b=r(2,30);return {skill:"arithmetic",prompt:"What is "+a+" + "+b+"?",answer:a+b,hint:"Start with the larger number and count forward."};
+function foundationLevel(skill,rows=readFoundationHistory()){
+ const recent=rows.filter(x=>x.skill===skill).slice(-10);
+ if(recent.length<5)return 1;
+ const pct=recent.filter(x=>x.correct).length/recent.length;
+ return pct>=.85?3:pct>=.65?2:1;
+}
+function foundationProblem(skill,level=1){
+ const r=(min,max)=>min+Math.floor(Math.random()*(max-min+1)),hard=level>=3,medium=level>=2;
+ if(skill==="fractions"){
+  const d=[2,4,5,10][r(0,3)],n=r(1,d-1);
+  if(medium){
+   const d2=d,n2=r(1,d2-1),sum=n+n2;
+   return {skill,level,prompt:"Add "+n+"/"+d+" + "+n2+"/"+d2+" (answer as a decimal)",answer:sum/d,hint:"Add the numerators because the denominators match, then divide."};
+  }
+  return {skill,level,prompt:"What is "+n+"/"+d+" as a decimal?",answer:n/d,hint:"Divide the numerator by the denominator."};
+ }
+ if(skill==="decimals"){
+  const scale=hard?100:10,a=r(10,medium?900:90)/scale,b=r(10,medium?900:90)/scale,subtract=medium&&r(0,1)===1;
+  return {skill,level,prompt:(subtract?"Subtract ":"Add ")+a.toFixed(hard?2:1)+(subtract?" − ":" + ")+b.toFixed(hard?2:1),answer:Math.round((subtract?a-b:a+b)*scale)/scale,hint:"Align decimal places before "+(subtract?"subtracting.":"adding.")};
+ }
+ if(skill==="percentages"){
+  const pct=[10,20,25,50,...(medium?[5,15,30,75]:[])][r(0,medium?7:3)],base=r(2,hard?60:15)*20;
+  return {skill,level,prompt:"What is "+pct+"% of "+base+"?",answer:base*pct/100,hint:"Convert the percent to a number divided by 100, then multiply."};
+ }
+ const mode=r(0,medium?3:1),a=r(3,hard?150:medium?80:45),b=r(2,hard?75:medium?50:30);
+ if(mode===1)return {skill:"arithmetic",level,prompt:"What is "+a+" − "+b+"?",answer:a-b,hint:"Subtraction finds the difference."};
+ if(mode===2)return {skill:"arithmetic",level,prompt:"What is "+a+" × "+b+"?",answer:a*b,hint:"Multiplication means equal groups."};
+ if(mode===3)return {skill:"arithmetic",level,prompt:"What is "+(a*b)+" ÷ "+b+"?",answer:a,hint:"Division undoes multiplication."};
+ return {skill:"arithmetic",level,prompt:"What is "+a+" + "+b+"?",answer:a+b,hint:"Start with the larger number and count forward."};
 }
 function readFoundationHistory(){try{const x=JSON.parse(localStorage.foundationAttempts||"[]");return Array.isArray(x)?x:[]}catch(e){return []}}
 function weakestFoundationSkill(rows=readFoundationHistory()){
@@ -560,12 +583,13 @@ function startFoundationPractice(skill="adaptive"){
  stopAudio();diagnosticMode=false;
  const chosen=skill==="adaptive"?weakestFoundationSkill():skill;
  if(!foundationSkills.includes(chosen))return;
- foundationSession={skill:chosen,question:foundationProblem(chosen),mistakes:0};renderFoundationPractice();
+ const level=foundationLevel(chosen);
+ foundationSession={skill:chosen,question:foundationProblem(chosen,level),mistakes:0};renderFoundationPractice();
 }
 function renderFoundationPractice(){
  if(!foundationSession)return;
  const q=foundationSession.question;bar.style.width="0%";
- screen.innerHTML='<div class="eyebrow">Ain’t Cloud Software · Foundation practice</div><h1>'+q.skill[0].toUpperCase()+q.skill.slice(1)+'</h1><div class="formula">'+q.prompt+'</div><div class="free-response"><label for="foundationAnswer">Your answer</label><div class="answer-entry"><input id="foundationAnswer" type="number" inputmode="decimal" step="any" placeholder="Enter number"><button onclick="checkFoundationAnswer()">Check</button></div><div id="foundationFeedback" role="status" aria-live="polite"></div></div><button class="next quiet" onclick="startFoundationPractice(\''+q.skill+'\')">New problem</button><button class="next quiet" onclick="home()">Back to home</button>';
+ screen.innerHTML='<div class="eyebrow">Ain’t Cloud Software · Foundation practice · Level '+q.level+'</div><h1>'+q.skill[0].toUpperCase()+q.skill.slice(1)+'</h1><div class="formula">'+q.prompt+'</div><div class="free-response"><label for="foundationAnswer">Your answer</label><div class="answer-entry"><input id="foundationAnswer" type="number" inputmode="decimal" step="any" placeholder="Enter number"><button onclick="checkFoundationAnswer()">Check</button></div><div id="foundationFeedback" role="status" aria-live="polite"></div></div><button class="next quiet" onclick="startFoundationPractice(\''+q.skill+'\')">New problem</button><button class="next quiet" onclick="home()">Back to home</button>';
 }
 function checkFoundationAnswer(){
  if(!foundationSession||foundationSession.completed)return;
@@ -575,7 +599,7 @@ function checkFoundationAnswer(){
  if(!raw||!Number.isFinite(value)){feedback.textContent="Enter a valid number.";return}
  const correct=Math.abs(value-q.answer)<1e-8;
  const history=readFoundationHistory();
- history.push({at:new Date().toISOString(),skill:q.skill,correct});
+ history.push({at:new Date().toISOString(),skill:q.skill,correct,level:q.level});
  localStorage.foundationAttempts=JSON.stringify(history.slice(-300));
  if(correct){foundationSession.completed=true;feedback.textContent="Correct. You can try another problem.";input.disabled=true}
  else{foundationSession.mistakes++;feedback.textContent="Not quite. "+q.hint}
