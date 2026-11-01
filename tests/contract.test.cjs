@@ -39,8 +39,8 @@ test('layout supports screen readers and reduced motion preferences', () => {
 
 test('Settings reports installed Android version and build', () => {
   const gradle = fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle, /versionName '1\.20\.0-test'/);
-  assert.match(gradle, /versionCode 27/);
+  assert.match(gradle, /versionName '1\.21\.0-rc1'/);
+  assert.match(gradle, /versionCode 28/);
   assert.match(java, /@JavascriptInterface public String getAppVersion\(\)/);
   assert.match(html, /function installedVersion\(\)/);
   assert.match(html, /App version/);
@@ -272,4 +272,15 @@ test('daily learning plan prioritizes due reviews and weaker skills',()=>{
  assert.equal(choose({foundation:[{skill:'arithmetic',attempts:10,accuracy:95},{skill:'fractions',attempts:0,accuracy:0}],lab:{sessions:0,total:0,worst:-1}},0).skill,'fractions');
  assert.match(html,/Start today’s learning session/);
  assert.match(html,/function startDailyLearning\(/);
+});
+
+test('offline Android app uses restricted WebView settings',()=>{
+ const manifest=fs.readFileSync('app/src/main/AndroidManifest.xml','utf8');
+ assert.doesNotMatch(manifest,/android.permission.INTERNET/);
+ assert.match(manifest,/android:allowBackup="false"/);
+ assert.match(manifest,/android:label="Mike's Math Coach"/);
+ assert.match(java,/setAllowUniversalAccessFromFileURLs\(false\)/);
+ assert.match(java,/setAllowFileAccessFromFileURLs\(false\)/);
+ assert.match(java,/setAllowContentAccess\(false\)/);
+ assert.match(java,/!"https".equals\(uri.getScheme\(\)\)/);
 });
