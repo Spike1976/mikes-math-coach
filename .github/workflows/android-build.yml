@@ -26,7 +26,7 @@ jobs:
         with:
           packages: platform-tools
 
-      - name: Install Android 35 SDK
+      - name: Install Android 36 SDK
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       - name: Restore stable test signing key
@@ -45,15 +45,25 @@ jobs:
       - name: Run interface and speech regression checks
         run: node --test tests/*.test.cjs
 
-      - name: Build debug APK
-        run: gradle --no-daemon clean assembleDebug
+      - name: Build and lint Android app
+        run: gradle --no-daemon clean assembleDebug lintDebug bundleRelease
 
-      - name: Verify APK exists
-        run: ls -lh app/build/outputs/apk/debug/app-debug.apk
+      - name: Verify APK and unsigned release bundle exist
+        run: |
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          test -s app/build/outputs/bundle/release/app-release.aab
+          ls -lh app/build/outputs/apk/debug/app-debug.apk app/build/outputs/bundle/release/app-release.aab
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: Mike-Math-Coach-v2.0.0
           path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Upload unsigned release bundle for validation only
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mike-Math-Coach-v2.0.0-UNSIGNED-NOT-FOR-PLAY
+          path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
