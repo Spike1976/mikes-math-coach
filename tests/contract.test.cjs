@@ -46,3 +46,27 @@ test('Settings reports installed Android version and build', () => {
   assert.match(html, /App version/);
   assert.match(html, /installedVersion\(\)/);
 });
+
+test('offline spaced review is connected to learning attempts and UI', () => {
+  for (const fn of ['reviewSchedule','readReviewState','recordReviewAttempt','dueReviewCourses','startDueReview']) {
+    assert.ok(html.includes('function ' + fn + '('), fn);
+  }
+  assert.match(html, /if\(!diagnosticMode\)recordReviewAttempt/);
+  assert.match(html, /Review skills due today/);
+  assert.match(html, /mathReviewState/);
+});
+test('spaced review interval policy rewards unaided accuracy', () => {
+  const match = html.match(/function reviewSchedule\(previous,correct,usedHint,now\)\{[\s\S]*?\n\}/);
+  assert.ok(match, 'Review scheduling implementation exists');
+  const reviewSchedule = new Function(match[0] + ';return reviewSchedule')();
+  const now=1700000000000;
+  const wrong=reviewSchedule(null,false,false,now);
+  const first=reviewSchedule(null,true,false,now);
+  const second=reviewSchedule(first,true,false,now);
+  const hinted=reviewSchedule(second,true,true,now);
+  assert.equal(wrong.dueAt,now);
+  assert.equal(first.intervalDays,1);
+  assert.equal(second.intervalDays,3);
+  assert.equal(hinted.intervalDays,1);
+  assert.equal(hinted.stage,0);
+});
