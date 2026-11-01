@@ -84,6 +84,15 @@ public class MainActivity extends Activity {
     }
 
     private class SpeechBridge {
+        @JavascriptInterface public String getAppVersion() {
+            try {
+                android.content.pm.PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+                return info.versionName + " (" + info.versionCode + ")";
+            } catch (Exception ignored) {
+                return "Unavailable";
+            }
+        }
+
         @JavascriptInterface public void speak(final String text) {
             runOnUiThread(new Runnable() {
                 @Override public void run() {
