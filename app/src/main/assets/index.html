@@ -371,7 +371,11 @@ function dueReviewCourses(now=Date.now()){
 }
 function startDueReview(){
  const due=dueReviewCourses();if(!due.length){showProfile();return}
- const course=due[0];start(course); 
+ const course=due[0],state=readReviewState(),now=Date.now();
+ const dueTags=new Set(Object.values(state).filter(item=>item&&item.course===course&&item.dueAt<=now).map(item=>item.topic));
+ const available=lessonBanks[course].steps.filter(item=>dueTags.has(String(item.tag).replace(/^REVIEW · /,"")));
+ start(course);
+ if(available.length){lessons=available.map(shuffleStep);step=0;completedSteps=new Set();render()}
 }
 async function saveAttempt(correct,selectedIndex,l){if(!diagnosticMode)recordReviewAttempt(lessonCourse(l),l.tag,correct,hintUsed);const row={timestamp:new Date().toISOString(),course:lessonCourse(l),topic:l.tag,question:l.q,formula:l.formula.replace(/<[^>]*>/g,""),selected:l.a[selectedIndex],correctAnswer:l.a[l.ok],correct,usedHint:hintUsed,explanationStyles:[...explanationStyles],responseSeconds:Math.max(1,Math.round((Date.now()-questionStarted)/1000)),lessonStep:step+1};try{const db=await openLearningDB();const tx=db.transaction("attempts","readwrite");tx.objectStore("attempts").add(row);tx.oncomplete=()=>db.close()}catch(e){const rows=JSON.parse(localStorage.learningAttempts||"[]");rows.push(row);localStorage.learningAttempts=JSON.stringify(rows.slice(-2000))}}
 async function allAttempts(){let rows=[];try{const db=await openLearningDB();rows=await new Promise((resolve,reject)=>{const req=db.transaction("attempts","readonly").objectStore("attempts").getAll();req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});db.close()}catch(e){}try{rows=rows.concat(JSON.parse(localStorage.learningAttempts||"[]"))}catch(e){}return rows}
