@@ -324,3 +324,10 @@ test('privacy policy accompanies offline production configuration',()=>{
  assert.match(policy,/offline mathematics tutoring/);
  assert.match(policy,/stored locally/);
 });
+
+test('continuous integration checks lint and unsigned bundle without publishing it',()=>{
+ const workflow=fs.readFileSync('.github/workflows/android-build.yml','utf8');
+ assert.match(workflow,/lintDebug bundleRelease/);
+ assert.match(workflow,/UNSIGNED-NOT-FOR-PLAY/);
+ assert.match(workflow,/test -s app\/build\/outputs\/bundle\/release\/app-release.aab/);
+});
