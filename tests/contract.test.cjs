@@ -39,8 +39,8 @@ test('layout supports screen readers and reduced motion preferences', () => {
 
 test('Settings reports installed Android version and build', () => {
   const gradle = fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle, /versionName '1\.15\.0-test'/);
-  assert.match(gradle, /versionCode 21/);
+  assert.match(gradle, /versionName '1\.16\.0-test'/);
+  assert.match(gradle, /versionCode 22/);
   assert.match(java, /@JavascriptInterface public String getAppVersion\(\)/);
   assert.match(html, /function installedVersion\(\)/);
   assert.match(html, /App version/);
@@ -176,8 +176,10 @@ test('adaptive foundation levels adjust to recent accuracy',()=>{
  const rows=(correctCount)=>Array.from({length:10},(_,i)=>({skill:'arithmetic',correct:i<correctCount}));
  assert.equal(level('arithmetic',[]),1);
  assert.equal(level('arithmetic',rows(6)),1);
- assert.equal(level('arithmetic',rows(7)),2);
- assert.equal(level('arithmetic',rows(9)),3);
+ assert.equal(level('arithmetic',rows(7)),1);
+ assert.equal(level('arithmetic',rows(9)),2);
+ assert.equal(level('arithmetic',rows(9).map(r=>({...r,level:2}))),3);
+ assert.equal(level('arithmetic',rows(4).map(r=>({...r,level:3}))),2);
 });
 test('foundation generator covers all arithmetic modes and valid decimal fractions',()=>{
  assert.match(html,/mode===1/);
@@ -186,4 +188,11 @@ test('foundation generator covers all arithmetic modes and valid decimal fractio
  assert.match(html,/Division undoes multiplication/);
  assert.match(html,/Add the numerators because the denominators match/);
  assert.match(html,/foundationProblem\(chosen,level\)/);
+});
+
+test('foundation dashboard has per-skill progress and practice controls',()=>{
+ assert.match(html,/function foundationStats\(/);
+ assert.match(html,/function showFoundationDashboard\(/);
+ assert.match(html,/Foundation progress dashboard/);
+ assert.match(html,/recent accuracy/);
 });
