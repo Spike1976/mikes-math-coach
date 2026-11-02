@@ -78,10 +78,10 @@ Every push to `main` builds a clean Android debug APK using Java 17, Android SDK
 The current test build uses:
 
 - Application ID: `com.mikesmathcoach.test`
-- Version: **1.6.5-test**
-- Version code: **9**
+- Version: **2.0.0**
+- Version code: **30**
 - Fixed JKS test signing key for repeatable updates
-- Artifact name: `Mike-Math-Coach-v1.6.5-test`
+- Artifact name: `Mike-Math-Coach-v2.0.0`
 
 Local build command:
 
@@ -109,7 +109,7 @@ The app is designed around local, on-device learning data whenever practical. Fu
 
 Active development.
 
-Current Android test version: **1.6.5-test** (`versionCode 11`).
+Current Android test version: **2.0.0** (`versionCode 30`).
 
 Latest main-branch feature set includes the selectable Basic Math Worksheet, expanded basic-math placement coverage, generated practice, corrected audio-stop behavior, and a progressive-help lesson system that keeps answers hidden by default.
 
