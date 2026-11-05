@@ -1,8 +1,8 @@
-name: Build Android APK
+name: Build Android APK and AAB
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -23,11 +22,11 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          packages: platform-tools
 
-      - name: Install Android 36 SDK
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Install Android platform
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       - name: Restore stable test signing key
         run: base64 --decode ci/mikes-math-test.keystore.b64 > ci/mikes-math-test.keystore
@@ -37,33 +36,54 @@ jobs:
         with:
           gradle-version: '8.11.1'
 
-      - name: Set up Node for source tests
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+      - name: Build Android debug APK and release AAB first
+        run: gradle --no-daemon --stacktrace clean assembleDebug bundleRelease
 
-      - name: Run interface and speech regression checks
-        run: node --test tests/*.test.cjs
-
-      - name: Build and lint Android app
-        run: gradle --no-daemon clean assembleDebug lintDebug bundleRelease
-
-      - name: Verify APK and unsigned release bundle exist
+      - name: Verify outputs
         run: |
           test -s app/build/outputs/apk/debug/app-debug.apk
           test -s app/build/outputs/bundle/release/app-release.aab
           ls -lh app/build/outputs/apk/debug/app-debug.apk app/build/outputs/bundle/release/app-release.aab
 
-      - name: Upload APK artifact
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Mike-Math-Coach-v2.0.0
+          name: Mike-Math-Coach-v2.0.0-debug-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
-      - name: Upload unsigned release bundle for validation only
+      - name: Upload unsigned AAB for validation
         uses: actions/upload-artifact@v4
         with:
-          name: Mike-Math-Coach-v2.0.0-UNSIGNED-NOT-FOR-PLAY
+          name: Mike-Math-Coach-v2.0.0-UNSIGNED-AAB-NOT-FOR-PLAY
           path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
+
+  checks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android platform
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run JavaScript regression tests
+        run: node --test tests/*.test.cjs
+      - name: Android lint
+        run: gradle --no-daemon --stacktrace lintDebug
